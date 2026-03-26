@@ -1,0 +1,60 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+_FMT_HDRS = glob(["include/fmt/*.h"])
+
+# Header-only target (no compile defines) — used by posix-mock-test to get
+# includes without linking the compiled fmt library (avoids ODR violations).
+cc_library(
+    name = "fmt-hdrs",
+    hdrs = _FMT_HDRS,
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+
+# Main compiled library
+cc_library(
+    name = "fmt",
+    srcs = [
+        "src/format.cc",
+        "src/os.cc",
+    ],
+    hdrs = _FMT_HDRS,
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+
+# Header-only variant: consumers get FMT_HEADER_ONLY=1 propagated
+cc_library(
+    name = "fmt-header-only",
+    hdrs = _FMT_HDRS,
+    includes = ["include"],
+    defines = ["FMT_HEADER_ONLY=1"],
+    visibility = ["//visibility:public"],
+)
+
+# C API static library
+cc_library(
+    name = "fmt-c",
+    srcs = ["src/fmt-c.cc"],
+    hdrs = ["include/fmt/fmt-c.h"],
+    deps = [":fmt"],
+    visibility = ["//visibility:public"],
+)
+
+# Export raw source files so test/BUILD.bazel can compile them directly
+# (posix-mock-test compiles format.cc directly; header-only tests include os.cc)
+exports_files([
+    "src/format.cc",
+    "src/os.cc",
+])
+
+# posix-mock-test textually #include "../src/os.cc" (not compiled as a TU).
+# textual_hdrs makes os.cc available in the sandbox without triggering compilation,
+# so the relative include resolves to execroot/src/os.cc correctly.
+cc_library(
+    name = "os-textual",
+    textual_hdrs = ["src/os.cc"],
+    hdrs = _FMT_HDRS,
+    includes = ["include"],
+    visibility = ["//test:__pkg__"],
+)

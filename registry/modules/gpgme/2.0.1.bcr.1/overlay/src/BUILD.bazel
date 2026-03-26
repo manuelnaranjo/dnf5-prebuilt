@@ -1,0 +1,220 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load(":gpgme_h.bzl", "gpgme_h")
+
+exports_files(["cJSON.h"])
+
+# ---------------------------------------------------------------------------
+# Platform config_settings (OS + CPU) for host triplet selection
+# ---------------------------------------------------------------------------
+[config_setting(
+    name = name,
+    constraint_values = constraints,
+) for name, constraints in {
+    "linux_x86_64":  ["@platforms//os:linux", "@platforms//cpu:x86_64"],
+    "linux_aarch64": ["@platforms//os:linux", "@platforms//cpu:aarch64"],
+    "linux_s390x":   ["@platforms//os:linux", "@platforms//cpu:s390x"],
+    "macos_x86_64":  ["@platforms//os:osx",   "@platforms//cpu:x86_64"],
+    "macos_aarch64": ["@platforms//os:osx",   "@platforms//cpu:aarch64"],
+}.items()]
+
+# ---------------------------------------------------------------------------
+# gpgme.h — generated from gpgme.h.in
+# ---------------------------------------------------------------------------
+gpgme_h(
+    name = "gen_gpgme_h",
+    template = "gpgme.h.in",
+    out = "gpgme.h",
+    config_host = select({
+        ":linux_x86_64":  "x86_64-pc-linux-gnu",
+        ":linux_aarch64": "aarch64-pc-linux-gnu",
+        ":linux_s390x":   "s390x-pc-linux-gnu",
+        ":macos_x86_64":  "x86_64-apple-darwin",
+        ":macos_aarch64": "aarch64-apple-darwin",
+    }),
+    substitutions = {
+        "@PACKAGE_VERSION@": "2.0.2",
+        "@VERSION_NUMBER@": "0x020002",
+        "@INSERT__TYPEDEFS_FOR_GPGME_H@":
+            "\n#include <sys/types.h>\ntypedef off_t   gpgme_off_t;\ntypedef ssize_t gpgme_ssize_t;",
+        "@NEED__FILE_OFFSET_BITS@": "0",
+        "@API__SSIZE_T@": "ssize_t",
+        "@API__OFF_T@": "off_t",
+    },
+)
+
+# ---------------------------------------------------------------------------
+# libgpgme — main library
+#
+# Source list mirrors src/Makefile.am main_sources (POSIX variant) plus
+# posix-io.c (system_components_not_extra) and engine-uiserver.c
+# (enabled when USE_DESCRIPTOR_PASSING + libassuan are present, which
+# they always are on Linux and macOS).
+# ---------------------------------------------------------------------------
+_LIB_SRCS = [
+    # Internal headers (private to the library)
+    "util.h",
+    "context.h",
+    "ops.h",
+    "data.h",
+    "wait.h",
+    "engine.h",
+    "engine-backend.h",
+    "debug.h",
+    "sema.h",
+    "priv-io.h",
+    "sys-util.h",
+    "mbox-util.h",
+    "parsetlv.h",
+    "json-common.h",
+    # Core utilities
+    "conversion.c",
+    "get-env.c",
+    "parsetlv.c",
+    "mbox-util.c",
+    # Data abstraction
+    "data.c",
+    "data-fd.c",
+    "data-stream.c",
+    "data-mem.c",
+    "data-user.c",
+    "data-estream.c",
+    "data-compat.c",
+    "data-identify.c",
+    # Key/signer management
+    "signers.c",
+    "sig-notation.c",
+    "key.c",
+    "keylist.c",
+    "keysign.c",
+    "tofupolicy.c",
+    "revsig.c",
+    # Async/wait
+    "wait.c",
+    "wait-global.c",
+    "wait-private.c",
+    "wait-user.c",
+    "op-support.c",
+    # Cryptographic operations
+    "encrypt.c",
+    "encrypt-sign.c",
+    "decrypt.c",
+    "decrypt-verify.c",
+    "verify.c",
+    "sign.c",
+    "passphrase.c",
+    "progress.c",
+    # Key operations
+    "import.c",
+    "export.c",
+    "genkey.c",
+    "delete.c",
+    "edit.c",
+    "getauditlog.c",
+    "setexpire.c",
+    "setownertrust.c",
+    "genrandom.c",
+    # Protocol / IPC
+    "opassuan.c",
+    "passwd.c",
+    "spawn.c",
+    "assuan-support.c",
+    # Engine backends
+    "engine.c",
+    "engine-gpg.c",
+    "status-table.c",
+    "engine-gpgsm.c",
+    "engine-assuan.c",
+    "engine-gpgconf.c",
+    "engine-uiserver.c",  # requires ENABLE_UISERVER (set in config.h)
+    "engine-g13.c",
+    "vfs-mount.c",
+    "vfs-create.c",
+    "engine-spawn.c",
+    # Configuration / utilities
+    "gpgconf.c",
+    "queryswdb.c",
+    "dirinfo.c",
+    # Core
+    "debug.c",
+    "gpgme.c",
+    "version.c",
+    "error.c",
+    # POSIX I/O (Linux + macOS)
+    "posix-util.c",
+    "posix-io.c",
+]
+
+cc_library(
+    name = "libgpgme",
+    srcs = _LIB_SRCS,
+    hdrs = [":gen_gpgme_h"],
+    includes = ["."],
+    copts = [
+        "-include",
+        "config.h",
+        "-Wno-deprecated-declarations",
+    ],
+    deps = [
+        "//config:config",
+        "@libgpg-error//src:libgpg_error",
+        "@libassuan//src:libassuan",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# ---------------------------------------------------------------------------
+# gpgme-tool — command-line tool
+# ---------------------------------------------------------------------------
+cc_binary(
+    name = "gpgme-tool",
+    srcs = [
+        "gpgme-tool.c",
+        "argparse.c",
+        "argparse.h",
+    ],
+    copts = [
+        "-include",
+        "config.h",
+    ],
+    deps = [
+        ":libgpgme",
+        "//config:config",
+        "@libgpg-error//src:libgpg_error",
+        "@libassuan//src:libassuan",
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# cJSON — embedded JSON library (shared by gpgme-json and tests/json:t-json)
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "cjson",
+    srcs = ["cJSON.c"],
+    hdrs = ["cJSON.h"],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+
+# ---------------------------------------------------------------------------
+# gpgme-json — JSON interface
+# ---------------------------------------------------------------------------
+cc_binary(
+    name = "gpgme-json",
+    srcs = [
+        "gpgme-json.c",
+        "json-core.c",
+        "json-util.c",
+        "json-common.h",
+    ],
+    copts = [
+        "-include",
+        "config.h",
+    ],
+    linkopts = ["-lm"],
+    deps = [
+        ":cjson",
+        ":libgpgme",
+        "//config:config",
+        "@libgpg-error//src:libgpg_error",
+    ],
+)

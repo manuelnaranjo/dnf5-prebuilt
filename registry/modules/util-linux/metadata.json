@@ -1,0 +1,18 @@
+{
+    "homepage": "https://github.com/util-linux/util-linux",
+    "maintainers": [
+        {
+            "email": "manuel.naranjo@gmail.com",
+            "github": "manuelnaranjo",
+            "github_user_id": 545883,
+            "name": "Manuel Naranjo"
+        }
+    ],
+    "repository": [
+        "github:util-linux/util-linux"
+    ],
+    "versions": [
+        "2.41.3.bcr.1"
+    ],
+    "yanked_versions": {}
+}

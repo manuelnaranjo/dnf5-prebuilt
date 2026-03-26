@@ -1,0 +1,3 @@
+# Shared build constants are in defs.bzl
+# Load them from there in component BUILD files:
+#   load("//:defs.bzl", "COPTS", "LIBDNF5_DEFINES")

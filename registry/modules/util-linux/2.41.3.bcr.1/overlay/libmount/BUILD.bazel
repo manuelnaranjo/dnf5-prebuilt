@@ -1,0 +1,102 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("//:defs.bzl", "COPTS", "MAJOR", "MINOR", "PACKAGE_VERSION", "PATCH")
+
+# Generate the public libmount.h from the in-tree template.
+expand_template(
+    name = "libmount_h",
+    out = "libmount.h",
+    substitutions = {
+        "@LIBMOUNT_VERSION@": PACKAGE_VERSION,
+        "@LIBMOUNT_MAJOR_VERSION@": MAJOR,
+        "@LIBMOUNT_MINOR_VERSION@": MINOR,
+        "@LIBMOUNT_PATCH_VERSION@": PATCH,
+    },
+    template = "src/libmount.h.in",
+)
+
+# libmount — mount management library.
+# Mirrors the meson `lib_mount` library target.
+# Linux-specific hooks are always included (we target Linux).
+# btrfs support is disabled (HAVE_BTRFS_SUPPORT=0 in config.h).
+# SELinux (hook_selinux.c) and cryptsetup are stubbed since those deps are off.
+cc_library(
+    name = "libmount",
+    srcs = [
+        "src/mountP.h",
+        "src/cache.c",
+        "src/fs.c",
+        "src/fs_statmount.c",
+        "src/init.c",
+        "src/iter.c",
+        "src/lock.c",
+        "src/optmap.c",
+        "src/optstr.c",
+        "src/tab.c",
+        "src/tab_diff.c",
+        "src/tab_listmount.c",
+        "src/tab_parse.c",
+        "src/tab_update.c",
+        "src/test.c",
+        "src/utils.c",
+        "src/version.c",
+        # Linux-only sources
+        "src/hooks.c",
+        "src/monitor.c",
+        "src/optlist.c",
+        "src/hook_veritydev.c",
+        "src/hook_subdir.c",
+        "src/hook_owner.c",
+        "src/hook_mount.c",
+        "src/hook_mount_legacy.c",
+        "src/hook_mkdir.c",
+        "src/hook_selinux.c",
+        "src/hook_loopdev.c",
+        "src/hook_idmap.c",
+        "src/context_umount.c",
+        "src/context_mount.c",
+        "src/context.c",
+    ],
+    hdrs = [":libmount_h"],
+    includes = ["."],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+    ],
+)
+
+# Test binaries — compiled with -DTEST_PROGRAM.
+# The meson build creates these when program_tests is enabled.
+[
+    cc_binary(
+        name = "test_mount_" + test,
+        srcs = ["src/" + src + ".c"],
+        copts = COPTS + ["-DTEST_PROGRAM"],
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+            "//libblkid:libblkid",
+            ":libmount",
+        ],
+    )
+    for test, src in {
+        "cache": "cache",
+        "context": "context",
+        "lock": "lock",
+        "optstr": "optstr",
+        "optlist": "optlist",
+        "tab": "tab",
+        "tab_diff": "tab_diff",
+        "monitor": "monitor",
+        "tab_update": "tab_update",
+        "utils": "utils",
+        "version": "version",
+        "debug": "init",
+    }.items()
+]

@@ -1,0 +1,215 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# Bundled Google Test / Google Mock compiled from the amalgamated source
+cc_library(
+    name = "gtest",
+    srcs = ["gtest/gmock-gtest-all.cc"],
+    hdrs = glob([
+        "gtest/gtest/*.h",
+        "gtest/gmock/*.h",
+    ]),
+    includes = ["gtest"],
+    defines = ["GTEST_HAS_STD_WSTRING=1"],
+    visibility = ["//visibility:public"],
+)
+
+_TEST_HDRS = [
+    "gtest-extra.h",
+    "test-assert.h",
+    "util.h",
+]
+
+# Shared test infrastructure (test runner + gtest helpers)
+cc_library(
+    name = "test-main",
+    srcs = [
+        "test-main.cc",
+        "gtest-extra.cc",
+        "util.cc",
+    ],
+    hdrs = _TEST_HDRS,
+    includes = ["."],
+    deps = [
+        ":gtest",
+        "//:fmt",
+    ],
+)
+
+# Sources compiled directly for HEADER_ONLY tests (mirrors CMake's TEST_MAIN_SRC + ../src/os.cc).
+# Includes test infrastructure headers (cc_test has no hdrs attr; all files go in srcs).
+_HEADER_ONLY_SRCS = [
+    "test-main.cc",
+    "gtest-extra.cc",
+    "util.cc",
+] + _TEST_HDRS + [
+    "//:src/os.cc",
+]
+_HEADER_ONLY_DEPS = [
+    ":gtest",
+    "//:fmt-header-only",
+]
+
+# ---------------------------------------------------------------------------
+# Standard tests — link against :test-main (which pulls in //:fmt transitively)
+# ---------------------------------------------------------------------------
+[cc_test(
+    name = name,
+    srcs = [name + ".cc"],
+    deps = [":test-main"],
+) for name in [
+    "args-test",
+    "base-test",
+    "assert-test",
+    "chrono-test",
+    "color-test",
+    "gtest-extra-test",
+    "ostream-test",
+    "compile-test",
+    "printf-test",
+    "std-test",
+    "xchar-test",
+]]
+
+# format-test needs mock-allocator.h (private header, goes in srcs for cc_test)
+cc_test(
+    name = "format-test",
+    srcs = [
+        "format-test.cc",
+        "mock-allocator.h",
+    ],
+    deps = [":test-main"],
+)
+
+# ranges-test has a companion ODR-test source
+cc_test(
+    name = "ranges-test",
+    srcs = [
+        "ranges-test.cc",
+        "ranges-odr-test.cc",
+    ],
+    deps = [":test-main"],
+)
+
+# enforce-checks-test requires FMT_ENFORCE_COMPILE_STRING
+cc_test(
+    name = "enforce-checks-test",
+    srcs = ["enforce-checks-test.cc"],
+    defines = ["FMT_ENFORCE_COMPILE_STRING"],
+    deps = [":test-main"],
+)
+
+# os-test exercises OS-specific fmt APIs
+cc_test(
+    name = "os-test",
+    srcs = ["os-test.cc"],
+    deps = [":test-main"],
+)
+
+# ---------------------------------------------------------------------------
+# HEADER_ONLY tests — compile test-main sources + os.cc inline with fmt-header-only
+# ---------------------------------------------------------------------------
+
+# format-impl-test: tests bigint/fp internals using FMT_HEADER_ONLY=1.
+#
+# ODR problem: if gtest-extra.cc is compiled with FMT_HEADER_ONLY=1 it includes
+# format-inl.h which instantiates bigint::operator*= with the *aborting* FMT_ASSERT
+# (no test-assert.h override).  format-impl-test.cc uses test-assert.h which
+# overrides FMT_ASSERT to throw.  The linker picks the aborting version →
+# SIGABRT instead of the expected assertion_failure exception.
+#
+# Fix: compile the test infrastructure (gtest-extra.cc etc.) in normal mode,
+# linking //:fmt for OS symbols.  Without FMT_HEADER_ONLY=1 those TUs do not
+# include format-inl.h, so bigint::operator*= is only instantiated once — in
+# format-impl-test.cc's TU — where FMT_ASSERT correctly throws.
+cc_library(
+    name = "format-impl-test-infra",
+    srcs = [
+        "test-main.cc",
+        "gtest-extra.cc",
+        "util.cc",
+    ],
+    hdrs = _TEST_HDRS,
+    includes = ["."],
+    deps = [
+        ":gtest",
+        "//:fmt",
+    ],
+)
+
+cc_test(
+    name = "format-impl-test",
+    srcs = [
+        "format-impl-test.cc",
+        "header-only-test.cc",
+    ],
+    includes = ["."],
+    defines = ["FMT_HEADER_ONLY=1"],
+    deps = [":format-impl-test-infra"],
+)
+
+cc_test(
+    name = "no-builtin-types-test",
+    srcs = _HEADER_ONLY_SRCS + ["no-builtin-types-test.cc"],
+    includes = ["."],
+    deps = _HEADER_ONLY_DEPS,
+)
+
+cc_test(
+    name = "scan-test",
+    srcs = _HEADER_ONLY_SRCS + [
+        "scan-test.cc",
+        "scan.h",
+    ],
+    includes = ["."],
+    deps = _HEADER_ONLY_DEPS,
+)
+
+cc_test(
+    name = "unicode-test",
+    srcs = _HEADER_ONLY_SRCS + ["unicode-test.cc"],
+    includes = ["."],
+    deps = _HEADER_ONLY_DEPS,
+)
+
+# ---------------------------------------------------------------------------
+# posix-mock-test: compiles format.cc directly (instead of linking libfmt)
+# so that POSIX wrappers in the test can intercept fmt's POSIX calls.
+# os.cc is textually #included by posix-mock-test.cc as "../src/os.cc".
+# //:os-textual exposes os.cc via textual_hdrs so it lands in the sandbox
+# at execroot/src/os.cc — the correct relative path — without being compiled
+# as a separate TU (which would cause duplicate symbols).
+# ---------------------------------------------------------------------------
+cc_test(
+    name = "posix-mock-test",
+    srcs = [
+        "posix-mock-test.cc",
+        "//:src/format.cc",
+        "test-main.cc",
+        "gtest-extra.cc",
+        "util.cc",
+        "posix-mock.h",
+    ] + _TEST_HDRS,
+    includes = ["."],
+    deps = [
+        ":gtest",
+        "//:os-textual",
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# C API test (pure C, no gtest — passes when main() returns 0)
+# ---------------------------------------------------------------------------
+cc_test(
+    name = "c-test",
+    srcs = ["c-test.c"],
+    deps = ["//:fmt-c"],
+)
+
+# ---------------------------------------------------------------------------
+# Performance sanity binary (not a registered test in CMake either)
+# ---------------------------------------------------------------------------
+cc_binary(
+    name = "perf-sanity",
+    srcs = ["perf-sanity.cc"],
+    deps = ["//:fmt"],
+)

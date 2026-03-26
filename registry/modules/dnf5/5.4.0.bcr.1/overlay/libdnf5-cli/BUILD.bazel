@@ -1,0 +1,43 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:defs.bzl", "COPTS")
+
+cc_library(
+    name = "libdnf5_cli",
+    srcs = glob(
+        [
+            "**/*.cpp",
+            "**/*.hpp",
+        ],
+        exclude = [
+            # WITH_MODULEMD=OFF: exclude module output formatters
+            "output/adapters/module.cpp",
+            "output/moduleinfo.cpp",
+            "output/modulelist.cpp",
+        ],
+    ),
+
+    # includes = ["."] adds libdnf5-cli/ to the include path for private headers
+    includes = ["."],
+
+    local_defines = [
+        # Controls symbol visibility (export vs import)
+        "LIBDNF_CLI_BUILD_LIBRARY",
+        # Translation domain
+        "GETTEXT_DOMAIN=\\\"libdnf5-cli\\\"",
+    ],
+
+    copts = COPTS,
+
+    deps = [
+        "//common",
+        "//include:libdnf5_cli_headers",
+        # libdnf5 also propagates LIBDNF5_DEFINES to this target
+        "//libdnf5",
+        "@fmt//:fmt",
+        "@json-c//:json-c",
+        # smartcols: table formatting for terminal output
+        "@util-linux//libsmartcols",
+    ],
+
+    visibility = ["//visibility:public"],
+)

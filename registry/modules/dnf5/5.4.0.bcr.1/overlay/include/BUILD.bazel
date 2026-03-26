@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Public libdnf5 headers.
+# strip_include_prefix = "/include" makes include/libdnf5/foo.hpp
+# available as #include "libdnf5/foo.hpp"
+cc_library(
+    name = "libdnf5_headers",
+    hdrs = glob([
+        "libdnf5/**/*.hpp",
+        "libdnf5/**/*.h",
+    ]),
+    strip_include_prefix = "/include",
+    visibility = ["//visibility:public"],
+)
+
+# Public libdnf5-cli headers.
+cc_library(
+    name = "libdnf5_cli_headers",
+    hdrs = glob([
+        "libdnf5-cli/**/*.hpp",
+        "libdnf5-cli/**/*.h",
+    ]),
+    strip_include_prefix = "/include",
+    visibility = ["//visibility:public"],
+)

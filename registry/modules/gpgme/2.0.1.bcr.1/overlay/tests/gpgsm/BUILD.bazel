@@ -1,0 +1,32 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+_COPTS = [
+    "-include",
+    "config.h",
+]
+
+_DEPS = [
+    "//src:libgpgme",
+    "//config:config",
+    "@libgpg-error//src:libgpg_error",
+]
+
+_HDRS = ["t-support.h"]
+
+[cc_binary(
+    name = name,
+    srcs = [name + ".c"] + _HDRS,
+    copts = _COPTS,
+    deps = _DEPS,
+) for name in [
+    "t-import",
+    "t-keylist",
+    "t-encrypt",
+    "t-verify",
+    "t-decrypt",
+    "t-sign",
+    "t-export",
+    "t-genkey",
+    "cms-keylist",
+    "cms-decrypt",
+]]

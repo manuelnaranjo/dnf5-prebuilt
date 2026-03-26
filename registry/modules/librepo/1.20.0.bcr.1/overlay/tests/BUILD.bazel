@@ -1,0 +1,85 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+
+# ---------------------------------------------------------------------------
+# test_main — C unit test binary using the check framework
+# ---------------------------------------------------------------------------
+cc_binary(
+    name = "test_main",
+    srcs = [
+        "fixtures.c",
+        "fixtures.h",
+        "test_checksum.c",
+        "test_checksum.h",
+        "test_downloader.c",
+        "test_downloader.h",
+        "test_gpg.c",
+        "test_gpg.h",
+        "test_handle.c",
+        "test_handle.h",
+        "test_lrmirrorlist.c",
+        "test_lrmirrorlist.h",
+        "test_main.c",
+        "test_metalink.c",
+        "test_metalink.h",
+        "test_mirrorlist.c",
+        "test_mirrorlist.h",
+        "test_package_downloader.c",
+        "test_package_downloader.h",
+        "test_repoconf.c",
+        "test_repoconf.h",
+        "test_repomd.c",
+        "test_repomd.h",
+        "test_repo_zck.c",
+        "test_repo_zck.h",
+        "test_url_substitution.c",
+        "test_url_substitution.h",
+        "test_util.c",
+        "test_util.h",
+        "test_version.c",
+        "test_version.h",
+        "testsys.c",
+        "testsys.h",
+    ],
+    deps = [
+        "//librepo:librepo",
+        "@check//:check",
+        "@glib//glib:glib",
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# Test data files
+# ---------------------------------------------------------------------------
+filegroup(
+    name = "test_data",
+    srcs = glob(["test_data/**"]),
+)
+
+# ---------------------------------------------------------------------------
+# Shell wrapper — passes the test_data path to the test binary
+# ---------------------------------------------------------------------------
+write_file(
+    name = "run_tests_sh",
+    out = "run_tests_bazel.sh",
+    is_executable = True,
+    content = [
+        "#!/usr/bin/env bash",
+        "set -euo pipefail",
+        'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"',
+        'exec "$SCRIPT_DIR/test_main" "$SCRIPT_DIR/test_data"',
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# sh_test wrapping test_main with test_data in runfiles
+# ---------------------------------------------------------------------------
+sh_test(
+    name = "librepo_unit_tests",
+    srcs = [":run_tests_sh"],
+    data = [
+        ":test_main",
+        ":test_data",
+    ],
+)

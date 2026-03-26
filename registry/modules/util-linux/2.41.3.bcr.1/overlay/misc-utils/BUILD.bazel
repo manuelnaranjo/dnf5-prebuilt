@@ -1,0 +1,307 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:defs.bzl", "COPTS")
+
+# blkid — lib_common + libblkid; ismounted_c is part of lib:common
+cc_binary(
+    name = "blkid",
+    srcs = ["blkid.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+    ],
+)
+
+# cal — lib_common + tcolors; ncurses optional (disabled in this build)
+cc_binary(
+    name = "cal",
+    srcs = ["cal.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//lib:tcolors",
+    ],
+)
+
+# logger — lib_common; strutils_c + strv_c already in lib:common
+cc_binary(
+    name = "logger",
+    srcs = ["logger.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# look — standalone
+cc_binary(
+    name = "look",
+    srcs = ["look.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)
+
+# mcookie — lib_common; md5_c already in lib:common
+cc_binary(
+    name = "mcookie",
+    srcs = ["mcookie.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# lastlog2 — lib_common + liblastlog2; strutils_c already in lib:common
+cc_binary(
+    name = "lastlog2",
+    srcs = ["lastlog2.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//liblastlog2:liblastlog2",
+    ],
+)
+
+# namei — lib_common; strutils_c + idcache_c already in lib:common
+cc_binary(
+    name = "namei",
+    srcs = ["namei.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# whereis — lib_common
+cc_binary(
+    name = "whereis",
+    srcs = ["whereis.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# lslocks — lib_common + libsmartcols + libmount
+cc_binary(
+    name = "lslocks",
+    srcs = ["lslocks.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libmount:libmount",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# lsblk — multi-file; lib_common + tcolors + libsmartcols + libblkid + libmount
+cc_binary(
+    name = "lsblk",
+    srcs = [
+        "lsblk-devtree.c",
+        "lsblk-mnt.c",
+        "lsblk-properties.c",
+        "lsblk.c",
+        "lsblk.h",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//lib:tcolors",
+        "//libblkid:libblkid",
+        "//libmount:libmount",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# uuidgen — lib_common + libuuid
+cc_binary(
+    name = "uuidgen",
+    srcs = ["uuidgen.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libuuid:libuuid",
+    ],
+)
+
+# uuidparse — lib_common + libuuid + libsmartcols
+cc_binary(
+    name = "uuidparse",
+    srcs = ["uuidparse.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libsmartcols:libsmartcols",
+        "//libuuid:libuuid",
+    ],
+)
+
+# uuidd — lib_common + libuuid; monotonic_c + timer_c already in lib:common
+cc_binary(
+    name = "uuidd",
+    srcs = ["uuidd.c"],
+    copts = COPTS,
+    linkopts = ["-lrt"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libuuid:libuuid",
+        "//libuuid:libuuid_hdrs",
+    ],
+)
+
+# findfs — libblkid only
+cc_binary(
+    name = "findfs",
+    srcs = ["findfs.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//libblkid:libblkid",
+    ],
+)
+
+# wipefs — lib_common + libsmartcols + libblkid
+cc_binary(
+    name = "wipefs",
+    srcs = ["wipefs.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# findmnt — multi-file; lib_common + libsmartcols + libblkid + libmount
+cc_binary(
+    name = "findmnt",
+    srcs = [
+        "findmnt-verify.c",
+        "findmnt.c",
+        "findmnt.h",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+        "//libmount:libmount",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# fincore — lib_common + libsmartcols
+cc_binary(
+    name = "fincore",
+    srcs = ["fincore.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# hardlink — lib_common; monotonic_c + fileeq_c already in lib:common
+cc_binary(
+    name = "hardlink",
+    srcs = ["hardlink.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# lsclocks — lib_common + libsmartcols
+cc_binary(
+    name = "lsclocks",
+    srcs = ["lsclocks.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# Simple tools — lib_common only
+[
+    cc_binary(
+        name = name,
+        srcs = [name + ".c"],
+        copts = COPTS,
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+        ],
+    )
+    for name in [
+        "kill",
+        "rename",
+        "getopt",
+        "pipesz",
+        "fadvise",
+        "waitpid",
+        "exch",
+    ]
+]
+
+# enosys requires generated syscalls.h + errnos.h (custom shell script targets); excluded.
+# lsfd requires generated errnos.h (custom shell script target); excluded.

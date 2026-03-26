@@ -1,0 +1,11 @@
+{
+    "url": "https://github.com/gpg/libassuan/archive/refs/tags/libassuan-3.0.2.tar.gz",
+    "integrity": "sha256-39TmuF3oPHuAlsbXm5FFAWEfVqIcPbkvYzUgMNIePW8=",
+    "strip_prefix": "libassuan-libassuan-3.0.2",
+    "overlay": {
+        "BUILD.bazel": "sha256-IvrP/BOzl7iUTFgxK6DXfLbwN1oYhgBANyW02Bt+jvk=",
+        "config/BUILD.bazel": "sha256-Cwp6anJHmStfjB6GgcHGa5CUZxuV8AGtAcoHqOwlgj0=",
+        "src/BUILD.bazel": "sha256-gJxgttU9BR0fCgZQ56jYbPOYuzz3X+hCxrtt89RfQD8=",
+        "tests/BUILD.bazel": "sha256-LeGb82RXIbRrryaVPARfMBtpe/VRRbgq7sqvUxKpvN8="
+    }
+}

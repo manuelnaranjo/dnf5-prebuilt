@@ -1,0 +1,51 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("//:defs.bzl", "COPTS")
+
+# liblastlog2 — last login data management library backed by sqlite3.
+# Mirrors the meson `lib_lastlog2` library target.
+cc_library(
+    name = "liblastlog2",
+    srcs = [
+        "src/lastlog2P.h",
+        "src/lastlog2.c",
+    ],
+    hdrs = ["src/lastlog2.h"],
+    # includes=["src"] exposes the src/ dir for tests that include lastlog2P.h directly.
+    includes = ["src"],
+    copts = COPTS,
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "@sqlite3//:sqlite3",
+    ],
+)
+
+# Test binaries for liblastlog2.
+# Each test links against liblastlog2 (and therefore sqlite3) and libdl.
+[
+    cc_binary(
+        name = "test_lastlog2_" + test,
+        srcs = ["src/tests/tst_" + test + ".c"],
+        copts = COPTS,
+        linkopts = ["-ldl"],
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+            ":liblastlog2",
+        ],
+    )
+    for test in [
+        "dlopen",
+        "pam_lastlog2_output",
+        "remove_entry",
+        "rename_user",
+        "write_read_user",
+        "y2038_ll2_read_all",
+        "y2038_sqlite3_time",
+    ]
+]

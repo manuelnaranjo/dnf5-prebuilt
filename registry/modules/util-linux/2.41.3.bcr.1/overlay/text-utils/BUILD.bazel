@@ -1,0 +1,96 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:defs.bzl", "COPTS")
+
+# Simple text utilities — only need lib_common.
+[
+    cc_binary(
+        name = name,
+        srcs = [name + ".c"],
+        copts = COPTS,
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+        ],
+    )
+    for name in [
+        "col",
+        "colrm",
+        "rev",
+    ]
+# more requires ncurses (disabled); excluded from this build.
+]
+
+# colcrt and line have no lib_common dependency.
+cc_binary(
+    name = "colcrt",
+    srcs = ["colcrt.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)
+
+cc_binary(
+    name = "line",
+    srcs = ["line.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)
+
+# bits — uses cpuset, strv from lib:common
+cc_binary(
+    name = "bits",
+    srcs = ["bits.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# hexdump — multi-file tool
+cc_binary(
+    name = "hexdump",
+    srcs = [
+        "hexdump.c",
+        "hexdump.h",
+        "hexdump-conv.c",
+        "hexdump-display.c",
+        "hexdump-parse.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//lib:tcolors",
+    ],
+)
+
+# column — requires libsmartcols for table formatting
+cc_binary(
+    name = "column",
+    srcs = ["column.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# ul and pg require ncurses (disabled); excluded from this build.
+# Add them back when @ncurses is enabled as a bazel_dep.

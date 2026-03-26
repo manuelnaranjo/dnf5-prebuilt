@@ -1,0 +1,51 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+_SIMPLE_TESTS = [
+    "t-version",
+    "t-strerror",
+    "t-syserror",
+    "t-printf",
+    "t-b64",
+    "t-logging",
+    "t-stringutils",
+    "t-malloc",
+    "t-spawn",
+    "t-strlist",
+    "t-name-value",
+]
+
+[cc_test(
+    name = t,
+    srcs = [t + ".c", "t-common.h"],
+    copts = ["-include", "config.h"],
+    deps = ["//src:libgpg_error", "//config:config"],
+) for t in _SIMPLE_TESTS]
+
+# t-argparse reads config files at runtime
+cc_test(
+    name = "t-argparse",
+    srcs = ["t-argparse.c", "t-common.h"],
+    copts = ["-include", "config.h"],
+    data = [
+        "t-argparse.conf",
+        "etc/t-argparse.conf",
+    ],
+    deps = ["//src:libgpg_error", "//config:config"],
+)
+
+# t-lock and t-poll use pthreads directly
+cc_test(
+    name = "t-lock",
+    srcs = ["t-lock.c", "t-common.h"],
+    copts = ["-include", "config.h"],
+    linkopts = ["-lpthread"],
+    deps = ["//src:libgpg_error", "//config:config"],
+)
+
+cc_test(
+    name = "t-poll",
+    srcs = ["t-poll.c", "t-common.h"],
+    copts = ["-include", "config.h"],
+    linkopts = ["-lpthread"],
+    deps = ["//src:libgpg_error", "//config:config"],
+)

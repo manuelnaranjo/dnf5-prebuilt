@@ -1,0 +1,227 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:defs.bzl", "COPTS")
+
+# mkfs — standalone, no lib_common
+cc_binary(
+    name = "mkfs",
+    srcs = ["mkfs.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)
+
+# mkfs.bfs — lib_common only
+cc_binary(
+    name = "mkfs.bfs",
+    srcs = ["mkfs.bfs.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# isosize — lib_common only
+cc_binary(
+    name = "isosize",
+    srcs = ["isosize.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# mkswap — lib_common + libblkid + libuuid; ismounted_c is part of lib:common
+cc_binary(
+    name = "mkswap",
+    srcs = ["mkswap.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+        "//libuuid:libuuid",
+    ],
+)
+
+# swaplabel — lib_common + swapprober + libblkid + libuuid
+cc_binary(
+    name = "swaplabel",
+    srcs = ["swaplabel.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//lib:swapprober",
+        "//libblkid:libblkid",
+        "//libuuid:libuuid",
+    ],
+)
+
+# fsck — lib_common + libblkid + libmount; monotonic_c is part of lib:common
+cc_binary(
+    name = "fsck",
+    srcs = ["fsck.c"],
+    copts = COPTS,
+    linkopts = ["-lrt"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+        "//libmount:libmount",
+    ],
+)
+
+# mkfs.minix / fsck.minix — lib_common; ismounted_c is part of lib:common
+cc_binary(
+    name = "mkfs.minix",
+    srcs = [
+        "minix_programs.h",
+        "mkfs.minix.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+cc_binary(
+    name = "fsck.minix",
+    srcs = [
+        "fsck.minix.c",
+        "minix_programs.h",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# raw requires linux/raw.h (not universally available); excluded from this build.
+
+# fdformat — lib_common only
+cc_binary(
+    name = "fdformat",
+    srcs = ["fdformat.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# blockdev — lib_common only
+cc_binary(
+    name = "blockdev",
+    srcs = ["blockdev.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# fdisk — lib_common + libfdisk + libsmartcols + tcolors; pager_c in lib:common
+cc_binary(
+    name = "fdisk",
+    srcs = [
+        "fdisk-list.c",
+        "fdisk-list.h",
+        "fdisk-menu.c",
+        "fdisk.c",
+        "fdisk.h",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//lib:tcolors",
+        "//libfdisk:libfdisk",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# sfdisk — same deps as fdisk
+cc_binary(
+    name = "sfdisk",
+    srcs = [
+        "fdisk-list.c",
+        "fdisk-list.h",
+        "sfdisk.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//lib:tcolors",
+        "//libfdisk:libfdisk",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# cfdisk requires ncurses (disabled); excluded from this build.
+
+# addpart, delpart, resizepart — lib_common only
+[
+    cc_binary(
+        name = name,
+        srcs = [name + ".c"],
+        copts = COPTS,
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+        ],
+    )
+    for name in [
+        "addpart",
+        "delpart",
+        "resizepart",
+    ]
+]
+
+# partx — lib_common + libsmartcols + libblkid
+cc_binary(
+    name = "partx",
+    srcs = ["partx.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+        "//libsmartcols:libsmartcols",
+    ],
+)
+
+# mkfs.cramfs and fsck.cramfs require zlib (disabled); excluded from this build.

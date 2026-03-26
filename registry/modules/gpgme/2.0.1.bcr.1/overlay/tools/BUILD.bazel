@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "gnupg-key-manage",
+    srcs = ["gnupg-key-manage.c"],
+    copts = [
+        "-include",
+        "config.h",
+    ],
+    deps = [
+        "//src:libgpgme",
+        "//config:config",
+        "@libgpg-error//src:libgpg_error",
+    ],
+)

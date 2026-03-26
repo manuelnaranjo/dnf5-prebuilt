@@ -1,0 +1,4 @@
+# Root BUILD.bazel — intentionally minimal.
+# config.h lives in //config/ so that includes = ["."] there adds
+# the right genfiles subdirectory (not the workspace root) to -I.
+

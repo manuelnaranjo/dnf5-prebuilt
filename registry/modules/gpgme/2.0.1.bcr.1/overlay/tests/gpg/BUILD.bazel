@@ -1,0 +1,63 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+exports_files(["t-support.h"])
+
+_COPTS = [
+    "-include",
+    "config.h",
+]
+
+_DEPS = [
+    "//src:libgpgme",
+    "//config:config",
+    "@libgpg-error//src:libgpg_error",
+]
+
+# t-support.h is a private header shared by all test programs in this dir.
+_HDRS = ["t-support.h"]
+
+[cc_binary(
+    name = name,
+    srcs = [name + ".c"] + _HDRS,
+    copts = _COPTS,
+    deps = _DEPS,
+) for name in [
+    "t-encrypt",
+    "t-encrypt-sym",
+    "t-encrypt-sign",
+    "t-sign",
+    "t-signers",
+    "t-decrypt",
+    "t-verify",
+    "t-decrypt-verify",
+    "t-sig-notation",
+    "t-export",
+    "t-import",
+    "t-edit",
+    "t-keylist",
+    "t-keylist-sig",
+    "t-keylist-secret-sig",
+    "t-wait",
+    "t-encrypt-large",
+    "t-file-name",
+    "t-gpgconf",
+    "t-encrypt-mixed",
+    "t-edit-sign",
+    "t-setownertrust",
+    "t-genkey",
+    "t-eventloop",
+]]
+
+# Thread tests need -lpthread
+[cc_binary(
+    name = name,
+    srcs = [name + ".c"] + _HDRS,
+    copts = _COPTS,
+    linkopts = ["-lpthread"],
+    deps = _DEPS,
+) for name in [
+    "t-thread1",
+    "t-thread-keylist",
+    "t-thread-keylist-verify",
+    "t-cancel",
+]]

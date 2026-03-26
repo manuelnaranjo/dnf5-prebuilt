@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/rpm-software-management/librepo/archive/refs/tags/1.20.0.tar.gz",
+    "integrity": "sha256-wh3Tyu/pfqWLyGX5IJWp0tsuyKq0nQxxTUdCCU25MLY=",
+    "strip_prefix": "librepo-1.20.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-tiztg/8IiUvvLIUpi/56LbZ1w0vFSArrtvCQ17bX0NI=",
+        "librepo/BUILD.bazel": "sha256-Kkcr/C9ejcJrbFR0AzlsUoG+y2KP7Ek8XXSyCA7FV9o=",
+        "tests/BUILD.bazel": "sha256-jB6x2h48FMzrDbT0SuPw6SyW6WJq49DonMcQqlzQ3ko="
+    }
+}

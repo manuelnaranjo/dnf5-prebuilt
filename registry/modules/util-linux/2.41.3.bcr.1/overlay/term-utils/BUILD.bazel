@@ -1,0 +1,90 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:defs.bzl", "COPTS")
+
+# mesg — simple, lib_common only
+cc_binary(
+    name = "mesg",
+    srcs = ["mesg.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# wall — uses lib_common; libsystemd optional (disabled in this build)
+cc_binary(
+    name = "wall",
+    srcs = [
+        "ttymsg.c",
+        "ttymsg.h",
+        "wall.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# write — uses lib_common; libsystemd optional (disabled in this build)
+cc_binary(
+    name = "write",
+    srcs = ["write.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# agetty — uses lib_common (which includes logindefs.c); econf disabled
+cc_binary(
+    name = "agetty",
+    srcs = ["agetty.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# scriptreplay — standalone, no extra deps
+cc_binary(
+    name = "scriptreplay",
+    srcs = [
+        "script-playutils.c",
+        "script-playutils.h",
+        "scriptreplay.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)
+
+# setterm requires ncurses (disabled); excluded from this build.
+# script requires PTY support (pty-session); included in lib:common.
+cc_binary(
+    name = "script",
+    srcs = ["script.c"],
+    copts = COPTS,
+    linkopts = ["-lpthread"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)

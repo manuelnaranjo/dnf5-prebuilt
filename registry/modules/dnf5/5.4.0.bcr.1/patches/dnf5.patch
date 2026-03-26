@@ -1,0 +1,51 @@
+diff --git a/libdnf5-cli/progressbar/progress_bar.cpp b/libdnf5-cli/progressbar/progress_bar.cpp
+index 9098296f..bcacc59c 100644
+--- a/libdnf5-cli/progressbar/progress_bar.cpp
++++ b/libdnf5-cli/progressbar/progress_bar.cpp
+@@ -308,7 +308,7 @@ void ProgressBar::update() {
+             static_cast<int32_t>(static_cast<float>(p_impl->ticks) / static_cast<float>(p_impl->total_ticks) * 100);
+     }
+
+-    auto now = std::chrono::high_resolution_clock::now();
++    auto now = std::chrono::system_clock::now();
+
+     // compute the current speed (ticks per second)
+     auto delta = now - p_impl->current_speed_window_start;
+diff --git a/libdnf5/conf/config_main.cpp b/libdnf5/conf/config_main.cpp
+index 77272618..4af83cba 100644
+--- a/libdnf5/conf/config_main.cpp
++++ b/libdnf5/conf/config_main.cpp
+@@ -19,7 +19,7 @@
+
+ #include "libdnf5/conf/config_main.hpp"
+
+-#include "config.h"
++#include "conf/config.h"
+ #include "config_utils.hpp"
+ #include "utils/deprecate.hpp"
+ #include "utils/system.hpp"
+diff --git a/libdnf5/conf/config_utils.cpp b/libdnf5/conf/config_utils.cpp
+index 66d39d59..a1f214d4 100644
+--- a/libdnf5/conf/config_utils.cpp
++++ b/libdnf5/conf/config_utils.cpp
+@@ -22,6 +22,7 @@
+ #include "libdnf5/utils/fs/file.hpp"
+
+ #include <glob.h>
++#include <sstream>
+
+
+ namespace libdnf5 {
+diff --git a/libdnf5/utils/fs/utils.hpp b/libdnf5/utils/fs/utils.hpp
+index 0aedf3ae..2f3c0e2a 100644
+--- a/libdnf5/utils/fs/utils.hpp
++++ b/libdnf5/utils/fs/utils.hpp
+@@ -20,7 +20,7 @@
+ #ifndef LIBDNF5_UTILS_FS_UTILS_PRIVATE_HPP
+ #define LIBDNF5_UTILS_FS_UTILS_PRIVATE_HPP
+
+-#include "libdnf5/utils/fs/utils.hpp"
++#include <libdnf5/utils/fs/utils.hpp>
+
+
+ namespace libdnf5::utils::fs {

@@ -1,0 +1,86 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+
+# ---------------------------------------------------------------------------
+# Common settings for all test targets.
+#
+# includes = ["."] adds both tests/ source dir and tests/ genfiles dir to -I,
+# which lets "#include "common.h"" resolve, and also resolves the legacy
+# relative include "#include "../src/assuan.h"" because Bazel places generated
+# headers at <genfiles>/src/assuan.h and the path ../src/assuan.h from
+# <genfiles>/tests/ resolves to <genfiles>/src/assuan.h.
+# ---------------------------------------------------------------------------
+_COPTS = [
+    "-include",
+    "config.h",
+]
+
+_DEPS = [
+    "//src:libassuan",
+            "//config:config",]
+
+# ---------------------------------------------------------------------------
+# Test programs
+# ---------------------------------------------------------------------------
+
+cc_test(
+    name = "version",
+    srcs = [
+        "version.c",
+        "common.h",
+    ],
+    includes = ["."],
+    copts = _COPTS,
+    deps = _DEPS,
+)
+
+cc_test(
+    name = "pipeconnect",
+    srcs = [
+        "pipeconnect.c",
+        "common.h",
+    ],
+    includes = ["."],
+    copts = _COPTS,
+    deps = _DEPS,
+)
+
+# fdpassing requires USE_DESCRIPTOR_PASSING (struct cmsghdr.cmsg_len),
+# available on Linux.
+# motd is opened by the client and sent over the fd-passing socket.
+# prepend_srcdir() reads $srcdir (defaults to "."); Bazel's test-setup.sh
+# cds to $TEST_SRCDIR/_main so srcdir="tests" resolves to
+# $TEST_SRCDIR/_main/tests/motd.
+cc_test(
+    name = "fdpassing",
+    srcs = [
+        "fdpassing.c",
+        "common.h",
+    ],
+    data = ["motd"],
+    env = {"srcdir": "tests"},
+    includes = ["."],
+    copts = _COPTS,
+    deps = _DEPS,
+)
+
+# ---------------------------------------------------------------------------
+# Non-test tools (noinst in automake, POSIX-only)
+# ---------------------------------------------------------------------------
+
+# socks5 is a SOCKS5 proxy test utility — not an automated test.
+cc_binary(
+    name = "socks5",
+    srcs = [
+        "socks5.c",
+        "common.h",
+    ],
+    includes = ["."],
+    copts = _COPTS,
+    deps = _DEPS,
+)
+
+# NOTE: fdpassing-socket.sh is a shell integration test that spawns the
+# fdpassing binary via a relative path ("./fdpassing").  Migrating it to
+# Bazel sh_test requires modifying the script to use rlocation, which is
+# out of scope here.  The equivalent coverage is provided by the fdpassing
+# cc_test above.

@@ -1,0 +1,11 @@
+module(name = "libgpg-error", version = "1.59.bcr.1")
+
+bazel_dep(name = "platforms",    version = "1.0.0")
+bazel_dep(name = "rules_cc",     version = "0.2.17")
+bazel_dep(name = "rules_shell",  version = "0.6.1")
+bazel_dep(name = "gawk",         version = "5.3.2.bcr.3")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "ape",          version = "1.1.0")
+
+cosmos = use_extension("@ape//ape/cosmos:defs.bzl", "ape_cosmos")
+use_repo(cosmos, "grep")

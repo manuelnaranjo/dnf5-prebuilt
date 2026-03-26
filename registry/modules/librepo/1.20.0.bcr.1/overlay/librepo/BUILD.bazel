@@ -1,0 +1,144 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+
+# ---------------------------------------------------------------------------
+# Generated headers (from .h.in templates)
+# LIBREPO_ZCHUNK_ENABLED=0: zchunk support is disabled in this Bazel build.
+# ---------------------------------------------------------------------------
+
+expand_template(
+    name = "gen_downloadtarget_h",
+    template = "downloadtarget.h.in",
+    out = "downloadtarget.h",
+    substitutions = {
+        "@LIBREPO_ZCHUNK_ENABLED@": "0",
+    },
+)
+
+expand_template(
+    name = "gen_handle_h",
+    template = "handle.h.in",
+    out = "handle.h",
+    substitutions = {
+        "@LIBREPO_ZCHUNK_ENABLED@": "0",
+    },
+)
+
+expand_template(
+    name = "gen_util_h",
+    template = "util.h.in",
+    out = "util.h",
+    substitutions = {
+        "@LIBREPO_ZCHUNK_ENABLED@": "0",
+    },
+)
+
+expand_template(
+    name = "gen_version_h",
+    template = "version.h.in",
+    out = "version.h",
+    substitutions = {
+        "@LIBREPO_MAJOR@": "1",
+        "@LIBREPO_MINOR@": "21",
+        "@LIBREPO_PATCH@": "0",
+    },
+)
+
+# ---------------------------------------------------------------------------
+# librepo — main shared library
+#
+# Source list mirrors librepo/CMakeLists.txt with USE_GPGME=ON.
+# Zchunk and SELinux support are disabled.
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "librepo",
+    srcs = [
+        "checksum.c",
+        "downloader.c",
+        "downloadtarget.c",
+        "fastestmirror.c",
+        "gpg.c",
+        "gpg_gpgme.c",  # USE_GPGME=ON
+        "handle.c",
+        "lrmirrorlist.c",
+        "metalink.c",
+        "metadata_downloader.c",
+        "mirrorlist.c",
+        "package_downloader.c",
+        "rcodes.c",
+        "repoconf.c",
+        "repomd.c",
+        "repoutil_yum.c",
+        "result.c",
+        "url_substitution.c",
+        "util.c",
+        "xmlparser.c",
+        "yum.c",
+        # Internal headers — private to the library, not exported
+        "cleanup.h",
+        "downloader_internal.h",
+        "downloadtarget_internal.h",
+        "fastestmirror_internal.h",
+        "gpg_internal.h",
+        "handle_internal.h",
+        "lrmirrorlist.h",
+        "repoconf_internal.h",
+        "result_internal.h",
+        "xattr_internal.h",
+        "xmlparser_internal.h",
+        "yum_internal.h",
+    ],
+    hdrs = [
+        "checksum.h",
+        "downloader.h",
+        "fastestmirror.h",
+        "gpg.h",
+        "librepo.h",
+        "metadata_downloader.h",
+        "metalink.h",
+        "mirrorlist.h",
+        "package_downloader.h",
+        "rcodes.h",
+        "repoconf.h",
+        "repomd.h",
+        "repoutil_yum.h",
+        "result.h",
+        "types.h",
+        "url_substitution.h",
+        "xmlparser.h",
+        "yum.h",
+        # Generated public headers
+        ":gen_downloadtarget_h",
+        ":gen_handle_h",
+        ":gen_util_h",
+        ":gen_version_h",
+    ],
+    # includes = ["."] adds both:
+    #   <workspace>/librepo/           — for relative includes like "util.h" in library sources
+    #   bazel-out/.../bin/librepo/     — for generated headers like util.h, handle.h
+    # strip_include_prefix + include_prefix create a virtual include directory where
+    # all hdrs are accessible as <librepo/foo.h>.  This makes the public headers'
+    # cross-references (#include <librepo/result.h>) work, and also lets test files
+    # use #include "librepo/util.h".  The virtual dir is propagated to all dependents.
+    includes = ["."],
+    strip_include_prefix = "/librepo",
+    include_prefix = "librepo",
+    defines = [
+        "G_LOG_DOMAIN=\\\"librepo\\\"",
+        "_FILE_OFFSET_BITS=64",
+        "_LARGEFILE_SOURCE",
+        "_LARGEFILE64_SOURCE",
+        "_GNU_SOURCE",
+        "USE_GPGME",
+    ],
+    copts = ["-std=c99", "-Wall"],
+    deps = [
+        "@glib//glib:glib",
+        "@glib//gio:gio",
+        "@libxml2//:libxml2",
+        "@curl//:curl",
+        "@openssl//:crypto",
+        "@gpgme//src:libgpgme",
+    ],
+    visibility = ["//visibility:public"],
+)

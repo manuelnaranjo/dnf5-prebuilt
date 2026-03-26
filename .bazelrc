@@ -1,0 +1,10 @@
+common --@curl//:ssl_lib=openssl
+common --registry=file:///%workspace%/registry
+common --registry=https://bcr.bazel.build/
+
+common:remote --remote_download_toplevel # Helps remove network bottleneck if caching is enabled
+common:remote --remote_timeout=10m
+common:remote --platforms=@toolchains_buildbuddy//platforms:linux_x86_64
+common:remote --extra_execution_platforms=@toolchains_buildbuddy//platforms:linux_x86_64
+
+try-import %workspace%/.bazelrc.user

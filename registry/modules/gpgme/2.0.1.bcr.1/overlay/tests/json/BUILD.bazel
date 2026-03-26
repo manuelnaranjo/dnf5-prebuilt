@@ -1,0 +1,23 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+# t-json includes "../gpg/t-support.h" and "../../src/cJSON.h" via relative
+# paths, so both must be available in the sandbox.
+cc_binary(
+    name = "t-json",
+    srcs = [
+        "t-json.c",
+        "//tests/gpg:t-support.h",
+        "//src:cJSON.h",
+    ],
+    copts = [
+        "-include",
+        "config.h",
+    ],
+    linkopts = ["-lm"],
+    deps = [
+        "//src:cjson",
+        "//src:libgpgme",
+        "//config:config",
+        "@libgpg-error//src:libgpg_error",
+    ],
+)

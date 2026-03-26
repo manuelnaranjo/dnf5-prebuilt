@@ -1,0 +1,82 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("//:defs.bzl", "COPTS")
+
+# libuuid — universally unique id library.
+# Mirrors the meson `lib_uuid` library target.
+cc_library(
+    name = "libuuid",
+    srcs = [
+        # lib_uuid_sources
+        "src/clear.c",
+        "src/compare.c",
+        "src/copy.c",
+        "src/gen_uuid.c",
+        "src/isnull.c",
+        "src/pack.c",
+        "src/parse.c",
+        "src/uuid_time.c",
+        # extras (predefined_c, unpack_c, unparse_c referenced separately in meson)
+        "src/predefined.c",
+        "src/unpack.c",
+        "src/unparse.c",
+        # private headers
+        "src/uuidP.h",
+        "src/uuidd.h",
+    ],
+    hdrs = ["src/uuid.h"],
+    copts = COPTS,
+    linkopts = ["-lpthread"],
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        # lib/common provides randutils, md5, sha1 (also compiled there)
+        "//lib:common",
+    ],
+)
+
+# Header-only target exposing uuid.h so that test binaries that compile
+# uuid sources directly can still find the public header.
+cc_library(
+    name = "libuuid_hdrs",
+    hdrs = [
+        "src/uuid.h",
+        "src/uuidd.h",
+    ],
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+)
+
+# Test binary for UUID time functions (requires TEST_PROGRAM define).
+cc_binary(
+    name = "test_uuid_time",
+    srcs = [
+        "src/gen_uuid.c",
+        "src/pack.c",
+        "src/unpack.c",
+        "src/unparse.c",
+        "src/uuidP.h",
+        "src/uuidd.h",
+    ],
+    copts = COPTS + ["-DTEST_PROGRAM"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        ":libuuid_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "test_uuid",
+    srcs = ["src/test_uuid.c"],
+    copts = COPTS + ["-DTEST_PROGRAM"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        ":libuuid",
+    ],
+)

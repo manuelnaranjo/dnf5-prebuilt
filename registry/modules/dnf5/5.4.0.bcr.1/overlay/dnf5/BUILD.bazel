@@ -1,0 +1,45 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:defs.bzl", "COPTS")
+
+cc_binary(
+    name = "dnf5",
+    srcs = glob(
+        ["**/*.cpp", "**/*.hpp", "**/*.h"],
+        exclude = [
+            # WITH_MODULEMD=OFF: exclude module command
+            "commands/module/**",
+        ],
+    ),
+
+    # includes = ["."]      adds dnf5/ to include path (for private headers)
+    # includes = ["include"] adds dnf5/include/ to include path
+    #   (allows #include "dnf5/context.hpp" for plugin API)
+    includes = [".", "include"],
+
+    local_defines = [
+        # Controls symbol visibility
+        "DNF_BUILD_APPLICATION",
+        # Translation domain
+        "GETTEXT_DOMAIN=\\\"dnf5\\\"",
+        # Runtime paths (match install prefix from config.h generation)
+        "LIBDIR=\\\"/usr/lib64\\\"",
+        "INSTALL_PREFIX=\\\"/usr\\\"",
+        "SYSCONFIG_DIR=\\\"/etc\\\"",
+    ],
+
+    copts = COPTS,
+
+    # Export all symbols so dnf5 plugins (loadable .so modules) can resolve them
+    linkopts = ["-Wl,--export-dynamic"],
+
+    deps = [
+        "//common",
+        "//libdnf5:bgettext",
+        "//libdnf5",
+        "//libdnf5-cli:libdnf5_cli",
+        # RPM library is used directly by some dnf5 command sources
+        "@rpm//:librpm",
+    ],
+
+    visibility = ["//visibility:public"],
+)

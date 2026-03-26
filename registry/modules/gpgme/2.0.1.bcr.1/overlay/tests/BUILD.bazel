@@ -1,0 +1,81 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+
+_COPTS = [
+    "-include",
+    "config.h",
+]
+
+_DEPS = [
+    "//src:libgpgme",
+    "//config:config",
+    "@libgpg-error//src:libgpg_error",
+]
+
+# ---------------------------------------------------------------------------
+# Core tests (can run without a live gpg installation)
+# ---------------------------------------------------------------------------
+
+cc_test(
+    name = "t-version",
+    srcs = ["t-version.c"],
+    copts = _COPTS,
+    deps = _DEPS,
+)
+
+cc_binary(
+    name = "t-data",
+    srcs = [
+        "t-data.c",
+        "run-support.h",
+    ],
+    copts = _COPTS,
+    data = [
+        "t-data-1.txt",
+        "t-data-2.txt",
+    ],
+    deps = _DEPS,
+)
+
+cc_binary(
+    name = "t-engine-info",
+    srcs = ["t-engine-info.c"],
+    copts = _COPTS,
+    deps = _DEPS,
+)
+
+# ---------------------------------------------------------------------------
+# run-* helper binaries (interactive / manual use, not automated tests)
+# ---------------------------------------------------------------------------
+
+_RUN_HDRS = ["run-support.h"]
+
+[cc_binary(
+    name = name,
+    srcs = [name + ".c"] + _RUN_HDRS,
+    copts = _COPTS,
+    deps = _DEPS,
+) for name in [
+    "run-keylist",
+    "run-export",
+    "run-import",
+    "run-sign",
+    "run-verify",
+    "run-encrypt",
+    "run-identify",
+    "run-decrypt",
+    "run-genkey",
+    "run-keysign",
+    "run-tofu",
+    "run-swdb",
+    "run-receive-keys",
+    "run-setownertrust",
+    "run-genrandom",
+]]
+
+cc_binary(
+    name = "run-threaded",
+    srcs = ["run-threaded.c"] + _RUN_HDRS,
+    copts = _COPTS,
+    linkopts = ["-lpthread"],
+    deps = _DEPS,
+)

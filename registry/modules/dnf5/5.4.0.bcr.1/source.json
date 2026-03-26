@@ -1,0 +1,18 @@
+{
+    "integrity": "sha256-no7ScIjaqq+edhIKBssyDi1rXFDnV2L6zy5SJ9lG4GM=",
+    "strip_prefix": "dnf5-5.4.0.0",
+    "url": "https://github.com/rpm-software-management/dnf5/archive/refs/tags/5.4.0.0.tar.gz",
+    "patches": {
+        "dnf5.patch": "sha256-/bWNu4JeHQrCDXnyAItJPqWa+vRU83z/ru3CkOLl+DQ="
+    },
+    "patch_strip": 1,
+    "overlay": {
+        "BUILD.bazel": "sha256-MMEwEq9sa8ZZLje3p5tyCMdcskv7xwa4JyamJqpuJK0=",
+        "common/BUILD.bazel": "sha256-5vo4WAe19mzLhCg6/lc+8cCS2+R0haU9jo3dhRNy/o8=",
+        "defs.bzl": "sha256-O3rvBQnCJcqjGEq4oYJkUJYi7ds6xD3627gbmUIupuQ=",
+        "dnf5/BUILD.bazel": "sha256-AZS9wndoJmcaEVlb2MaSkcYY3yzZM0W63ndG0PjKO4g=",
+        "include/BUILD.bazel": "sha256-5IE4PJs/3IPBcE3isEHCj7Wla6wuNWsEa8DgQ22Su9E=",
+        "libdnf5/BUILD.bazel": "sha256-BRTyaKdPRgpl8AuhALk0RSlDZ2ThP+IXsRV+7ZM5YHw=",
+        "libdnf5-cli/BUILD.bazel": "sha256-0so/a0ZSJMyHp/wxWO1LYo1WmzVPf62RFCp3BeS4GM0="
+    }
+}

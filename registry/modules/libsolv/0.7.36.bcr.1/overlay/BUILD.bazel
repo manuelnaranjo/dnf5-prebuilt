@@ -1,0 +1,11 @@
+alias(
+    name = "solv",
+    actual = "//src:solv",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "solvext",
+    actual = "//ext:solvext",
+    visibility = ["//visibility:public"],
+)

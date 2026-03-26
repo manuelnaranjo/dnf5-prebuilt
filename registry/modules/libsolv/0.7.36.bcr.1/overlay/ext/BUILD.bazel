@@ -1,0 +1,57 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+_EXT_DEFINES = [
+    "_FILE_OFFSET_BITS=64",
+    "HAVE_STRCHRNUL=1",
+    "HAVE_FOPENCOOKIE=1",
+    "HAVE_QSORT_R=1",
+    "ENABLE_ZLIB_COMPRESSION=1",
+    "ENABLE_LZMA_COMPRESSION=1",
+    "ENABLE_BZIP2_COMPRESSION=1",
+    "ENABLE_ZSTD_COMPRESSION=1",
+    "ENABLE_COMPLEX_DEPS=1",
+    "ENABLE_RPMMD=1",
+    "ENABLE_RPMDB=1",
+    "ENABLE_RPMPKG=1",
+    "ENABLE_RPMPKG_LIBRPM=1",
+    "ENABLE_RPMDB_LIBRPM=1",
+]
+
+cc_library(
+    name = "solvext",
+    srcs = [
+        # Always included
+        "solv_xfopen.c",
+        "testcase.c",
+        "repo_testcase.c",
+        # RPMDB / RPMPKG
+        "pool_fileconflicts.c",
+        "repo_rpmdb.c",
+        # RPMMD
+        "repo_repomdxml.c",
+        "repo_rpmmd.c",
+        "repo_deltainfoxml.c",
+        "repo_updateinfoxml.c",
+        "repodata_diskusage.c",
+        "solv_xmlparser.c",
+        # COMPLEX_DEPS + RPM formats
+        "pool_parserpmrichdep.c",
+        # comps
+        "repo_comps.c",
+    ],
+    hdrs = glob(["*.h"]),
+    includes = ["."],
+    local_defines = _EXT_DEFINES,
+    deps = [
+        "//src:solv",
+        "@libexpat//:libexpat",
+        "@zlib",
+        "@bzip2//:bz2",
+        "@zstd",
+        "@xz//:lzma",
+        "@rpm//:librpmio",
+        "@rpm//:librpm",
+    ],
+    visibility = ["//visibility:public"],
+    include_prefix = "solv",
+)

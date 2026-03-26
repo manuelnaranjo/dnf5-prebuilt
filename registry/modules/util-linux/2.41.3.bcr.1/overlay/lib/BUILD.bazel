@@ -1,0 +1,104 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:defs.bzl", "COPTS")
+
+# Internal common static library used by all util-linux shared libraries.
+# Mirrors the meson `lib_common` static_library target.
+#
+# Sources conditional in meson on LINUX=true are included unconditionally here
+# since we target Linux x86_64.  Sources conditional on HAVE_LANGINFO_H are
+# omitted (langinfo.h IS present on Linux, so langinfo.c is not needed).
+# Sources conditional on HAVE_CPU_SET_T and HAVE_OPENAT/HAVE_DIRFD are
+# included (both are true on any modern Linux).
+cc_library(
+    name = "common",
+    srcs = [
+        # lib_common_sources base set
+        "blkdev.c",
+        "buffer.c",
+        "canonicalize.c",
+        "color-names.c",
+        "crc32.c",
+        "crc32c.c",
+        "crc64.c",
+        "c_strtod.c",
+        "encode.c",
+        "env.c",
+        "fileutils.c",
+        "idcache.c",
+        "jsonwrt.c",
+        "mangle.c",
+        "match.c",
+        "mbsalign.c",
+        "mbsedit.c",
+        "md5.c",
+        "procfs.c",
+        "pwdutils.c",
+        "randutils.c",
+        "sha1.c",
+        "sha256.c",
+        "signames.c",
+        "strutils.c",
+        "strv.c",
+        "timeutils.c",
+        "ttyutils.c",
+        "xxhash.c",
+        # LINUX-only
+        "caputils.c",
+        "linux_version.c",
+        "loopdev.c",
+        # HAVE_CPU_SET_T (true on Linux)
+        "cpuset.c",
+        # HAVE_OPENAT + HAVE_DIRFD (true on Linux)
+        "path.c",
+        "sysfs.c",
+        # Plymouth support (ENABLE_PLYMOUTH_SUPPORT=1 in config.h)
+        "plymouth-ctrl.c",
+        # monotonic, timer, etc. used by libmount and others
+        "monotonic.c",
+        "timer.c",
+        "ismounted.c",
+        "exec_shell.c",
+        "fileeq.c",
+        "pager.c",
+        "pty-session.c",
+        "shells.c",
+        # logindefs.c: econf disabled (HAVE_LIBECONF=0), compiles as pure-C fallback
+        "logindefs.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)
+
+# swapprober needs libblkid so it can't be in lib:common (circular dep).
+# Only a few tools use it: disk-utils/swaplabel.
+cc_library(
+    name = "swapprober",
+    srcs = ["swapprober.c"],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//libblkid:blkid_hdrs",
+    ],
+)
+
+# Colors sub-library (requires curses, disabled for now but exposed as a no-op).
+# When ncurses is added, this can be wired up with a dep on @ncurses.
+cc_library(
+    name = "tcolors",
+    srcs = [
+        "color-names.c",
+        "colors.c",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)

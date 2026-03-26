@@ -1,0 +1,16 @@
+{
+    "url": "https://github.com/rpm-software-management/rpm/releases/download/rpm-6.0.1-release/rpm-6.0.1.tar.bz2",
+    "integrity": "sha256-RP0uFCWIUojOjo2o8Y5rhb04AzLClyVUqFhgrxD4bQ8=",
+    "strip_prefix": "rpm-6.0.1",
+    "overlay": {
+        "BUILD.bazel": "sha256-6Jvn5nGIQfNA3EVizSZVbYAMCr1JwFSqdPvdMwHkgNw=",
+        "config.bzl": "sha256-UcWD6qSpQPjWOCeZcCyJpgp6RYxsgWzehbQXBhEzUjI=",
+        "templates.bzl": "sha256-MS+iGeD+MOHRtHwxybxuxYj/wMX/0v2x1769PYDp8jI=",
+        "tests/BUILD.bazel": "sha256-ZFRHEzFm/+OUe+u3vR3ybke6RmhtTQHRj9CQyH/mM10=",
+        "tests/rpm_test.bzl": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+    },
+    "patches": {
+        "0001-fix-delete_key_compat.patch": "sha256-dYvGI9fM+BCKb0KgdCX0pssZ7TvMux85ocrfBDjFewQ="
+    },
+    "patch_strip": 0
+}

@@ -1,0 +1,17 @@
+{
+    "url": "https://www.gnupg.org/ftp/gcrypt/gpgme/gpgme-2.0.1.tar.bz2",
+    "integrity": "sha256-ghqwaVyELqtRdSqBmAySsEEMfq3QQQP3kdXSpSZ4SWY=",
+    "strip_prefix": "gpgme-2.0.1",
+    "overlay": {
+        "BUILD.bazel": "sha256-IvrP/BOzl7iUTFgxK6DXfLbwN1oYhgBANyW02Bt+jvk=",
+        "config/BUILD.bazel": "sha256-2Eg4Y0Btm2oc/IVlgObTM3gJy5/05Kihsxdlz5iV/yc=",
+        "src/BUILD.bazel": "sha256-7cwTLc81e+URPnuv4rgLRJgycP1K+2c5O7ap7KUfbHI=",
+        "src/gpgme_h.bzl": "sha256-DmaZl1tFMA7ar/wbyg6kPXvq1QJNRJTdgRKkRaMVIXU=",
+        "tests/BUILD.bazel": "sha256-2b/AOFbe7uKl+rhjP34IB/VyQ+spv7Po3BgTNUrny2I=",
+        "tests/gpg/BUILD.bazel": "sha256-pc0VnZj5TxGthWBu1mrg7bfkU5hgh0RLotZMi0LIU+w=",
+        "tests/gpgsm/BUILD.bazel": "sha256-IQ+yuU44t0q+iltNPVWYmXHL3CnBNa2dEroAFmXtHFA=",
+        "tests/json/BUILD.bazel": "sha256-Ca7AsSMTtMZDXw2mXQMIRkrKvAKeq7OItkCcq/s0jOg=",
+        "tests/opassuan/BUILD.bazel": "sha256-A57D8ugH/yRSUBHp1+eldxdv5iJTf6z7ql/WokxqqcE=",
+        "tools/BUILD.bazel": "sha256-b0kQUvnrHidMpj/t9QPpzY/qdGMOKnR8ZJIYs8I70kQ="
+    }
+}

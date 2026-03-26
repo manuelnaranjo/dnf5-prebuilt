@@ -1,0 +1,123 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+expand_template(
+    name = "gen_utility_cxx",
+    out = "utility.cxx",
+    substitutions = {
+        "#include \"doctest.h\"": "#include \"doctest/doctest.h\"",
+        "#include \"utility.hpp\"": "#include \"utility.h\"",
+    },
+    template = "utility.cpp",
+)
+
+expand_template(
+    name = "gen_utility_h",
+    out = "utility.h",
+    substitutions = {
+        "#include \"doctest.h\"": "#include \"doctest/doctest.h\"",
+    },
+    template = "utility.hpp",
+)
+
+cc_library(
+    name = "test_utility",
+    srcs = ["utility.cxx"],
+    hdrs = ["utility.h"],
+    deps = [
+        "@doctest//doctest",
+        "//:toml11",
+    ],
+
+)
+
+TESTS = [
+    "test_accessed",
+    "test_comments",
+    "test_datetime",
+    "test_error_message",
+    "test_find",
+    "test_find_or",
+    "test_format_floating",
+    "test_format_integer",
+    "test_format_table",
+    "test_get",
+    "test_get_or",
+    "test_literal",
+    "test_location",
+    "test_parse",
+    "test_parse_array",
+    "test_parse_boolean",
+    "test_parse_datetime",
+    "test_parse_floating",
+    "test_parse_inline_table",
+    "test_parse_integer",
+    "test_parse_null",
+    "test_parse_string",
+    "test_parse_table",
+    "test_parse_table_keys",
+    "test_result",
+    "test_scanner",
+    "test_serialize",
+    "test_spec",
+    "test_storage",
+    "test_syntax_boolean",
+    "test_syntax_comment",
+    "test_syntax_datetime",
+    "test_syntax_floating",
+    "test_syntax_integer",
+    "test_syntax_key",
+    "test_syntax_string",
+    "test_traits",
+    "test_types",
+    "test_user_defined_conversion",
+    "test_utility_test",
+    "test_value",
+    "test_visit",
+]
+
+[
+    expand_template(
+        name = "gen_" + test,
+        out = (test[:-5] if test == "test_utility_test" else test) + ".cxx",
+        substitutions = {
+            "#include \"doctest.h\"": "#include \"doctest/doctest.h\"",
+            "#include \"utility.hpp\"": "#include \"utility.h\"",
+        },
+        template = (test[:-5] if test == "test_utility_test" else test) + ".cpp",
+    )
+    for test in TESTS
+]
+
+[
+    cc_test(
+        name = test,
+        srcs = [
+            (test[:-5] if test == "test_utility_test" else test) + ".cxx",
+        ],
+        deps = [
+            ":test_utility",
+            "@doctest//doctest",
+            "//:toml11",
+        ],
+    )
+    for test in TESTS
+]
+
+cc_binary(
+    name = "toml11_decoder",
+    srcs = ["to_json.cpp"],
+    deps = [
+        "//:toml11",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_binary(
+    name = "toml11_encoder",
+    srcs = ["to_toml.cpp"],
+    deps = [
+        "//:toml11",
+        "@nlohmann_json//:json",
+    ],
+)

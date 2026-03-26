@@ -1,0 +1,9 @@
+module(
+    name = "toml11",
+    version = "4.4.0.bcr.1",
+    bazel_compatibility = [">=7.2.1"],
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "bazel_lib", version = "3.2.2")

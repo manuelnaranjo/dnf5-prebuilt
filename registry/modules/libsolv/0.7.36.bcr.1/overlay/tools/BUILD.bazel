@@ -1,0 +1,126 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+_TOOLS_DEFINES = [
+    "_FILE_OFFSET_BITS=64",
+    "HAVE_STRCHRNUL=1",
+    "HAVE_FOPENCOOKIE=1",
+    "HAVE_QSORT_R=1",
+    "ENABLE_ZLIB_COMPRESSION=1",
+    "ENABLE_LZMA_COMPRESSION=1",
+    "ENABLE_BZIP2_COMPRESSION=1",
+    "ENABLE_ZSTD_COMPRESSION=1",
+    "ENABLE_COMPLEX_DEPS=1",
+    "ENABLE_RPMMD=1",
+    "ENABLE_RPMDB=1",
+    "ENABLE_RPMPKG=1",
+    "ENABLE_RPMPKG_LIBRPM=1",
+    "ENABLE_RPMDB_LIBRPM=1",
+]
+
+_SOLV_DEPS = [
+    "//ext:solvext",
+    "//src:solv",
+]
+
+cc_library(
+    name = "toolstuff",
+    srcs = ["common_write.c"],
+    hdrs = ["common_write.h"],
+    local_defines = _TOOLS_DEFINES,
+    deps = ["//src:solv"],
+)
+
+_TOOLSTUFF_DEPS = [":toolstuff"] + _SOLV_DEPS
+
+# Always-built tools
+
+cc_binary(
+    name = "dumpsolv",
+    srcs = ["dumpsolv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = ["//src:solv"],
+)
+
+cc_binary(
+    name = "installcheck",
+    srcs = ["installcheck.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _SOLV_DEPS,
+)
+
+cc_binary(
+    name = "mergesolv",
+    srcs = ["mergesolv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+cc_binary(
+    name = "testsolv",
+    srcs = ["testsolv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _SOLV_DEPS,
+    visibility = ["//test:__pkg__"],
+)
+
+cc_binary(
+    name = "repo2solv",
+    srcs = ["repo2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+# RPMDB tools
+
+cc_binary(
+    name = "rpmdb2solv",
+    srcs = ["rpmdb2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+cc_binary(
+    name = "findfileconflicts",
+    srcs = ["findfileconflicts.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _SOLV_DEPS,
+)
+
+# RPMPKG tools
+
+cc_binary(
+    name = "rpms2solv",
+    srcs = ["rpms2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+# RPMMD tools
+
+cc_binary(
+    name = "repomdxml2solv",
+    srcs = ["repomdxml2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+cc_binary(
+    name = "rpmmd2solv",
+    srcs = ["rpmmd2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+cc_binary(
+    name = "updateinfoxml2solv",
+    srcs = ["updateinfoxml2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)
+
+cc_binary(
+    name = "deltainfoxml2solv",
+    srcs = ["deltainfoxml2solv.c"],
+    local_defines = _TOOLS_DEFINES,
+    deps = _TOOLSTUFF_DEPS,
+)

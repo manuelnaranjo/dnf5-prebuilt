@@ -1,0 +1,23 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Header-only library
+cc_library(
+    name = "toml11",
+    hdrs = glob([
+        "include/**/*.hpp",
+    ]),
+    includes = ["include"],
+)
+
+# Compiled library
+cc_library(
+    name = "toml11_compiled",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob([
+        "include/**/*.hpp",
+    ]),
+    defines = ["TOML11_COMPILE_SOURCES"],
+    includes = ["include"],
+)

@@ -1,0 +1,18 @@
+{
+    "homepage": "https://github.com/rpm-software-management/dnf5",
+    "maintainers": [
+        {
+            "email": "manuel.naranjo@gmail.com",
+            "github": "manuelnaranjo",
+            "github_user_id": 545883,
+            "name": "Manuel Naranjo"
+        }
+    ],
+    "repository": [
+        "github:rpm-software-management/dnf5"
+    ],
+    "versions": [
+        "5.4.0.bcr.1"
+    ],
+    "yanked_versions": {}
+}

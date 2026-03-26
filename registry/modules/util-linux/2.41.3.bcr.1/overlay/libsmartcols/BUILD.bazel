@@ -1,0 +1,150 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_bison//bison:bison.bzl", "bison")
+load("@rules_flex//flex:flex.bzl", "flex")
+load("//:defs.bzl", "COPTS", "PACKAGE_VERSION")
+
+# Generate the public libsmartcols.h from the in-tree template.
+expand_template(
+    name = "libsmartcols_h",
+    out = "libsmartcols.h",
+    substitutions = {
+        "@LIBSMARTCOLS_VERSION@": PACKAGE_VERSION,
+    },
+    template = "src/libsmartcols.h.in",
+)
+
+# Private + public headers needed by the bison/flex grammars.
+# smartcolsP.h includes libsmartcols.h, so we expose both src/*.h and the generated header.
+# includes=["src"] makes src/smartcolsP.h findable as "smartcolsP.h".
+# includes=["."] makes the generated libsmartcols.h findable as "libsmartcols.h".
+#
+# flex has no copts attribute, so "-include config.h" cannot propagate via COPTS.
+# We provide the HAVE_* defines that c.h needs via the defines attribute instead.
+# Same-value macro redefinition is valid in C (ISO C17 §6.10.3).
+cc_library(
+    name = "libsmartcols_private_hdrs",
+    hdrs = glob(["src/*.h"]) + [":libsmartcols_h"],
+    defines = [
+        "_GNU_SOURCE",
+        "HAVE_DIRFD=1",
+        "HAVE_ERR=1",
+        "HAVE_ERR_H=1",
+        "HAVE_ERRX=1",
+        "HAVE_LOFF_T=1",
+        "HAVE_NANOSLEEP=1",
+        "HAVE_PROGRAM_INVOCATION_SHORT_NAME=1",
+        "HAVE_REALLOCARRAY=1",
+        "HAVE_SYS_SYSMACROS_H=1",
+        "HAVE_TLS=1",
+        "HAVE_USLEEP=1",
+        "HAVE_WARN=1",
+        "HAVE_WARNX=1",
+    ],
+    includes = [
+        ".",
+        "src",
+    ],
+    deps = [
+        "//:config",
+        "//include:headers",
+    ],
+)
+
+# ---- Bison / Flex generation (no compilation, just file generation) ----
+#
+# filter-parser.c/h includes filter-scanner.h and vice-versa, creating a
+# circular compilation dependency. We break it by using the lower-level
+# `bison` and `flex` rules (generation only) and then compiling both outputs
+# together in a single cc_library below.
+
+# Generate filter-parser.c and filter-parser.h from filter-parser.y.
+bison(
+    name = "filter-parser",
+    src = "src/filter-parser.y",
+)
+
+# Generate filter-scanner.c and filter-scanner.h from filter-scanner.l.
+flex(
+    name = "filter-scanner",
+    src = "src/filter-scanner.l",
+)
+
+# Access the generated source files via output groups.
+filegroup(
+    name = "filter_parser_src",
+    srcs = [":filter-parser"],
+    output_group = "cc_srcs",
+)
+
+filegroup(
+    name = "filter_parser_hdr",
+    srcs = [":filter-parser"],
+    output_group = "cc_hdrs",
+)
+
+filegroup(
+    name = "filter_scanner_src",
+    srcs = [":filter-scanner"],
+    output_group = "cc_srcs",
+)
+
+filegroup(
+    name = "filter_scanner_hdr",
+    srcs = [":filter-scanner"],
+    output_group = "cc_hdrs",
+)
+
+# Compile both generated grammar files together in one cc_library.
+# includes=["."] exposes the generated .h files to dependents as "filter-parser.h".
+cc_library(
+    name = "filter_grammar",
+    srcs = [
+        ":filter_parser_src",
+        ":filter_scanner_src",
+    ],
+    hdrs = [
+        ":filter_parser_hdr",
+        ":filter_scanner_hdr",
+    ],
+    includes = ["."],
+    copts = COPTS,
+    deps = [":libsmartcols_private_hdrs"],
+)
+
+# libsmartcols — table / tree formatting library.
+# Mirrors the meson `lib_smartcols` both_libraries target.
+cc_library(
+    name = "libsmartcols",
+    srcs = [
+        "src/smartcolsP.h",
+        "src/iter.c",
+        "src/symbols.c",
+        "src/cell.c",
+        "src/column.c",
+        "src/line.c",
+        "src/table.c",
+        "src/print.c",
+        "src/print-api.c",
+        "src/version.c",
+        "src/calculate.c",
+        "src/grouping.c",
+        "src/walk.c",
+        "src/init.c",
+        "src/filter.c",
+        "src/filter-param.c",
+        "src/filter-expr.c",
+    ],
+    hdrs = [":libsmartcols_h"],
+    includes = ["."],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        ":filter_grammar",
+        ":libsmartcols_private_hdrs",
+    ],
+    include_prefix = "libsmartcols",
+)

@@ -1,0 +1,258 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+# ---------------------------------------------------------------------------
+# Platform config_settings (OS + CPU) for mkheader triplet selection
+# ---------------------------------------------------------------------------
+[config_setting(
+    name = name,
+    constraint_values = constraints,
+) for name, constraints in {
+    "linux_x86_64":  ["@platforms//os:linux", "@platforms//cpu:x86_64"],
+    "linux_aarch64": ["@platforms//os:linux", "@platforms//cpu:aarch64"],
+    "linux_s390x":   ["@platforms//os:linux", "@platforms//cpu:s390x"],
+    "macos_x86_64":  ["@platforms//os:osx",   "@platforms//cpu:x86_64"],
+    "macos_aarch64": ["@platforms//os:osx",   "@platforms//cpu:aarch64"],
+}.items()]
+
+# ---------------------------------------------------------------------------
+# Build-time host tools (compiled for the exec platform)
+# ---------------------------------------------------------------------------
+
+cc_binary(
+    name = "mkheader_tool",
+    srcs = ["mkheader.c"],
+)
+
+cc_library(
+    name = "mkerrcodes_h_lib",
+    hdrs = [":gen_mkerrcodes_h"],
+    includes = ["."],
+)
+
+cc_binary(
+    name = "mkerrcodes_tool",
+    srcs = ["mkerrcodes.c"],
+    deps = [":mkerrcodes_h_lib"],
+)
+
+# ---------------------------------------------------------------------------
+# Code generation — pure AWK (hermetic gawk)
+# ---------------------------------------------------------------------------
+
+genrule(
+    name = "gen_err_sources_h",
+    srcs = ["err-sources.h.in", "mkstrtable.awk"],
+    outs = ["err-sources.h"],
+    tools = ["@gawk//:gawk"],
+    cmd = "$(execpath @gawk//:gawk) -f $(location mkstrtable.awk) -v textidx=3 $(location err-sources.h.in) > $@",
+)
+
+genrule(
+    name = "gen_err_codes_h",
+    srcs = ["err-codes.h.in", "mkstrtable.awk"],
+    outs = ["err-codes.h"],
+    tools = ["@gawk//:gawk"],
+    cmd = "$(execpath @gawk//:gawk) -f $(location mkstrtable.awk) -v textidx=3 $(location err-codes.h.in) > $@",
+)
+
+genrule(
+    name = "gen_err_sources_sym_h",
+    srcs = ["err-sources.h.in", "mkstrtable.awk"],
+    outs = ["err-sources-sym.h"],
+    tools = ["@gawk//:gawk"],
+    cmd = "$(execpath @gawk//:gawk) -f $(location mkstrtable.awk) -v textidx=2 -v nogettext=1 $(location err-sources.h.in) > $@",
+)
+
+genrule(
+    name = "gen_err_codes_sym_h",
+    srcs = ["err-codes.h.in", "mkstrtable.awk"],
+    outs = ["err-codes-sym.h"],
+    tools = ["@gawk//:gawk"],
+    cmd = "$(execpath @gawk//:gawk) -f $(location mkstrtable.awk) -v textidx=2 -v nogettext=1 $(location err-codes.h.in) > $@",
+)
+
+genrule(
+    name = "gen_errnos_sym_h",
+    srcs = ["errnos.in", "mkstrtable.awk"],
+    outs = ["errnos-sym.h"],
+    tools = ["@gawk//:gawk"],
+    cmd = "$(execpath @gawk//:gawk) -f $(location mkstrtable.awk) -v textidx=2 -v nogettext=1 -v prefix=GPG_ERR_ -v pkg_namespace=errnos_ $(location errnos.in) > $@",
+)
+
+genrule(
+    name = "gen_code_to_errno_h",
+    srcs = ["errnos.in", "mkerrnos.awk"],
+    outs = ["code-to-errno.h"],
+    tools = ["@gawk//:gawk"],
+    cmd = "$(execpath @gawk//:gawk) -f $(location mkerrnos.awk) $(location errnos.in) > $@",
+)
+
+# ---------------------------------------------------------------------------
+# mkerrcodes.h — AWK → exec CC (CPP) → AWK
+# ---------------------------------------------------------------------------
+
+genrule(
+    name = "gen_mkerrcodes_h",
+    srcs = ["errnos.in", "mkerrcodes1.awk", "mkerrcodes.awk"],
+    outs = ["mkerrcodes.h"],
+    toolchains = ["@rules_cc//cc:current_cc_toolchain"],
+    tools = ["@gawk//:gawk", "@grep//:binary"],
+    cmd = """
+GAWK=$(execpath @gawk//:gawk)
+GREP=$(execpath @grep//:binary)
+$$GAWK -f $(location mkerrcodes1.awk) $(location errnos.in) | \
+$(CC) -E -P -x c - | \
+$$GREP GPG_ERR_ | \
+$$GAWK -f $(location mkerrcodes.awk) > $@
+""",
+)
+
+# ---------------------------------------------------------------------------
+# code-from-errno.h — run mkerrcodes_tool, post-process with AWK
+# ---------------------------------------------------------------------------
+
+genrule(
+    name = "gen_code_from_errno_h",
+    srcs = ["mkerrcodes2.awk"],
+    outs = ["code-from-errno.h"],
+    tools = [":mkerrcodes_tool", "@gawk//:gawk"],
+    cmd = "$(execpath :mkerrcodes_tool) | $(execpath @gawk//:gawk) -f $(location mkerrcodes2.awk) > $@",
+)
+
+# ---------------------------------------------------------------------------
+# gpg-error.h / gpgrt.h — run mkheader_tool with platform-selected triplet
+#
+# mkheader derives srcdir from the directory of gpg-error.h.in.  In the Bazel
+# sandbox source files are symlinked at their workspace-relative paths, so
+# srcdir becomes .../src/ and syscfg/lock-obj-pub.*.h files are found there.
+# ---------------------------------------------------------------------------
+
+_MKHEADER = "$(execpath :mkheader_tool) --cross"
+_TMPL = "$(location gpg-error.h.in)"
+_CFG = "$(location //config:gen_config_h)"
+_VER = "1.60 0x013c00"
+
+genrule(
+    name = "gen_gpg_error_h",
+    srcs = [
+        "gpg-error.h.in",
+        "err-sources.h.in",
+        "err-codes.h.in",
+        "errnos.in",
+        "w32-add.h",
+        "//config:gen_config_h",
+    ] + glob(["syscfg/lock-obj-pub.*.h"]),
+    outs = ["gpg-error.h"],
+    tools = [":mkheader_tool"],
+    cmd = select({
+        ":linux_x86_64":  "{} x86_64-unknown-linux-gnu  {} {} {} > $@".format(_MKHEADER, _TMPL, _CFG, _VER),
+        ":linux_aarch64": "{} aarch64-unknown-linux-gnu {} {} {} > $@".format(_MKHEADER, _TMPL, _CFG, _VER),
+        ":linux_s390x":   "{} s390x-unknown-linux-gnu   {} {} {} > $@".format(_MKHEADER, _TMPL, _CFG, _VER),
+        ":macos_x86_64":  "{} x86_64-apple-darwin       {} {} {} > $@".format(_MKHEADER, _TMPL, _CFG, _VER),
+        ":macos_aarch64": "{} aarch64-apple-darwin      {} {} {} > $@".format(_MKHEADER, _TMPL, _CFG, _VER),
+    }),
+)
+
+genrule(
+    name = "gen_gpgrt_h",
+    srcs = [":gen_gpg_error_h"],
+    outs = ["gpgrt.h"],
+    cmd = "cp $< $@",
+)
+
+# ---------------------------------------------------------------------------
+# Main library
+# ---------------------------------------------------------------------------
+
+_LIB_SRCS = [
+    "posix-lock.c",
+    "posix-thread.c",
+    "spawn-posix.c",
+    "init.c",
+    "version.c",
+    "strsource.c",
+    "strerror.c",
+    "code-to-errno.c",
+    "code-from-errno.c",
+    "visibility.c",
+    "sysutils.c",
+    "stringutils.c",
+    "strlist.c",
+    "name-value.c",
+    "syscall-clamp.c",
+    "logging.c",
+    "b64dec.c",
+    "b64enc.c",
+    "argparse.c",
+    "estream.c",
+    "estream-printf.c",
+    # Private source-tree headers
+    "gettext.h",
+    "gpgrt-int.h",
+    "protos.h",
+    "init.h",
+    "lock.h",
+    "thread.h",
+    "estream.h",
+    "estream-printf.h",
+    "visibility.h",
+    "posix-lock-obj.h",
+    # Generated private headers (included by the .c files above)
+    ":gen_err_sources_h",
+    ":gen_err_codes_h",
+    ":gen_err_sources_sym_h",
+    ":gen_err_codes_sym_h",
+    ":gen_errnos_sym_h",
+    ":gen_code_to_errno_h",
+    ":gen_code_from_errno_h",
+]
+
+cc_library(
+    name = "libgpg_error",
+    srcs = _LIB_SRCS,
+    hdrs = [
+        ":gen_gpg_error_h",
+        ":gen_gpgrt_h",
+    ],
+    copts = [
+        "-DLOCALEDIR=\\\"/usr/share/locale\\\"",
+        "-DSYSCONFDIR=\\\"/etc\\\"",
+        # Force-include config.h so #if HAVE_CONFIG_H guards in source files
+        # resolve correctly.  The #ifndef HAVE_CONFIG_H guard inside config.h
+        # makes subsequent implicit inclusions via the guard a no-op.
+        "-include",
+        "config.h",
+        # strerror.c assigns strerror_r() return to int, but the GNU variant
+        # (enabled by _GNU_SOURCE) returns char*.  Clang 21 promotes this to
+        # an error; suppress it since the upstream code handles both variants.
+        "-Wno-int-conversion",
+    ],
+    includes = ["."],
+    linkopts = ["-lpthread"],
+    deps = ["//config:config"],
+    visibility = ["//visibility:public"],
+)
+
+# ---------------------------------------------------------------------------
+# gpg-error binary
+# ---------------------------------------------------------------------------
+
+cc_binary(
+    name = "gpg_error",
+    srcs = [
+        "strsource-sym.c",
+        "strerror-sym.c",
+        "gpg-error.c",
+        ":gen_err_sources_sym_h",
+        ":gen_err_codes_sym_h",
+        ":gen_errnos_sym_h",
+    ],
+    copts = [
+        "-DPKGDATADIR=\\\"/usr/share/libgpg-error\\\"",
+        "-DLOCALEDIR=\\\"/usr/share/locale\\\"",
+        "-include",
+        "config.h",
+    ],
+    deps = [":libgpg_error", "//config:config"],
+    visibility = ["//visibility:public"],
+)

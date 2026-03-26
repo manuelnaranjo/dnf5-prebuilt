@@ -1,0 +1,6 @@
+.bazelrc.user
+bazel-bin
+bazel-dnf5_prebuilt
+bazel-out
+bazel-testlogs
+registry/**/MODULE.bazel.lock

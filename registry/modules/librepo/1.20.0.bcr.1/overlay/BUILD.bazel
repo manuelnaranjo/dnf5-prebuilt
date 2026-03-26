@@ -1,0 +1,4 @@
+# Root BUILD.bazel — intentionally minimal.
+# The library is defined in //librepo:librepo.
+# Headers are exposed as <librepo/foo.h> via strip_include_prefix/include_prefix
+# in that target, so no workspace-root include trick is needed here.

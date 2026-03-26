@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:defs.bzl", "COPTS")
+
+# All public util-linux internal headers.
+# Other packages add //include:headers to their deps.
+cc_library(
+    name = "headers",
+    hdrs = glob(["*.h"]),
+    copts = COPTS,
+    # Expose this package dir as an include search path so that
+    # code using #include "all-io.h" (without the "include/" prefix) works.
+    includes = ["."],
+    deps = ["//:config"],
+    visibility = ["//visibility:public"],
+)

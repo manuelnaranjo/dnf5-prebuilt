@@ -1,0 +1,18 @@
+{
+    "homepage": "https://www.gnupg.org/",
+    "maintainers": [
+        {
+            "email": "manuel.naranjo@gmail.com",
+            "github": "manuelnaranjo",
+            "github_user_id": 545883,
+            "name": "Manuel Naranjo"
+        }
+    ],
+    "repository": [
+        "github:gpg/gpgme"
+    ],
+    "versions": [
+        "2.0.1.bcr.1"
+    ],
+    "yanked_versions": {}
+}

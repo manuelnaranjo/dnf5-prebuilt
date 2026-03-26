@@ -1,0 +1,18 @@
+{
+    "homepage": "https://github.com/gpg/libassuan",
+    "maintainers": [
+        {
+            "email": "manuel.naranjo@gmail.com",
+            "github": "manuelnaranjo",
+            "github_user_id": 545883,
+            "name": "Manuel Naranjo"
+        }
+    ],
+    "repository": [
+        "github:gpg/libassuan"
+    ],
+    "versions": [
+        "3.0.2.bcr.1"
+    ],
+    "yanked_versions": {}
+}

@@ -1,0 +1,154 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("//:defs.bzl", "COPTS", "LIBBLKID_DATE", "PACKAGE_VERSION")
+
+# Generate the public blkid.h header from the in-tree template.
+expand_template(
+    name = "blkid_h",
+    out = "blkid.h",
+    substitutions = {
+        "@LIBBLKID_VERSION@": PACKAGE_VERSION,
+        "@LIBBLKID_DATE@": LIBBLKID_DATE,
+    },
+    template = "src/blkid.h.in",
+)
+
+# Header-only target so that lib:swapprober can depend on blkid.h
+# without creating a circular dep (libblkid → lib:common → lib:swapprober → libblkid).
+cc_library(
+    name = "blkid_hdrs",
+    hdrs = [":blkid_h"],
+    # includes=["."] adds the package output dir to -I so #include <blkid.h> works.
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+
+# libblkid — block device identification library.
+# Mirrors the meson `lib_blkid` both_libraries target.
+# Linux topology sources (dm.c, evms.c, …) are always included since we target Linux.
+cc_library(
+    name = "libblkid",
+    srcs = [
+        # core
+        "src/blkidP.h",
+        "src/init.c",
+        "src/cache.c",
+        "src/config.c",
+        "src/dev.c",
+        "src/devname.c",
+        "src/devno.c",
+        "src/encode.c",
+        "src/evaluate.c",
+        "src/getsize.c",
+        "src/probe.c",
+        "src/read.c",
+        "src/resolve.c",
+        "src/save.c",
+        "src/tag.c",
+        "src/verify.c",
+        "src/version.c",
+        # partition handlers
+        "src/partitions/aix.c",
+        "src/partitions/aix.h",
+        "src/partitions/atari.c",
+        "src/partitions/bsd.c",
+        "src/partitions/dos.c",
+        "src/partitions/gpt.c",
+        "src/partitions/mac.c",
+        "src/partitions/minix.c",
+        "src/partitions/partitions.c",
+        "src/partitions/partitions.h",
+        "src/partitions/sgi.c",
+        "src/partitions/solaris_x86.c",
+        "src/partitions/sun.c",
+        "src/partitions/ultrix.c",
+        "src/partitions/unixware.c",
+        # superblock probers
+        "src/superblocks/adaptec_raid.c",
+        "src/superblocks/apfs.c",
+        "src/superblocks/bcache.c",
+        "src/superblocks/befs.c",
+        "src/superblocks/bfs.c",
+        "src/superblocks/bitlocker.c",
+        "src/superblocks/bluestore.c",
+        "src/superblocks/btrfs.c",
+        "src/superblocks/cs_fvault2.c",
+        "src/superblocks/cramfs.c",
+        "src/superblocks/ddf_raid.c",
+        "src/superblocks/drbd.c",
+        "src/superblocks/drbdproxy_datalog.c",
+        "src/superblocks/drbdmanage.c",
+        "src/superblocks/exfat.c",
+        "src/superblocks/exfs.c",
+        "src/superblocks/ext.c",
+        "src/superblocks/f2fs.c",
+        "src/superblocks/gfs.c",
+        "src/superblocks/hfs.c",
+        "src/superblocks/highpoint_raid.c",
+        "src/superblocks/hpfs.c",
+        "src/superblocks/iso9660.c",
+        "src/superblocks/isw_raid.c",
+        "src/superblocks/jfs.c",
+        "src/superblocks/jmicron_raid.c",
+        "src/superblocks/linux_raid.c",
+        "src/superblocks/lsi_raid.c",
+        "src/superblocks/luks.c",
+        "src/superblocks/lvm.c",
+        "src/superblocks/minix.c",
+        "src/superblocks/mpool.c",
+        "src/superblocks/netware.c",
+        "src/superblocks/nilfs.c",
+        "src/superblocks/ntfs.c",
+        "src/superblocks/refs.c",
+        "src/superblocks/nvidia_raid.c",
+        "src/superblocks/ocfs.c",
+        "src/superblocks/promise_raid.c",
+        "src/superblocks/reiserfs.c",
+        "src/superblocks/romfs.c",
+        "src/superblocks/silicon_raid.c",
+        "src/superblocks/squashfs.c",
+        "src/superblocks/stratis.c",
+        "src/superblocks/superblocks.c",
+        "src/superblocks/superblocks.h",
+        "src/superblocks/swap.c",
+        "src/superblocks/sysv.c",
+        "src/superblocks/ubi.c",
+        "src/superblocks/ubifs.c",
+        "src/superblocks/udf.c",
+        "src/superblocks/ufs.c",
+        "src/superblocks/vdo.c",
+        "src/superblocks/vfat.c",
+        "src/superblocks/via_raid.c",
+        "src/superblocks/vmfs.c",
+        "src/superblocks/vxfs.c",
+        "src/superblocks/xfs.c",
+        "src/superblocks/zfs.c",
+        "src/superblocks/zonefs.c",
+        "src/superblocks/erofs.c",
+        # topology — generic
+        "src/topology/topology.c",
+        "src/topology/topology.h",
+        # topology — Linux-only
+        "src/topology/dm.c",
+        "src/topology/evms.c",
+        "src/topology/ioctl.c",
+        "src/topology/lvm.c",
+        "src/topology/md.c",
+        "src/topology/sysfs.c",
+    ],
+    # blkid.h is the public API header; generated from src/blkid.h.in.
+    hdrs = [":blkid_h"],
+    # includes=["."] exposes generated blkid.h via #include <blkid.h>.
+    # includes=["src"] exposes blkidP.h and topology.h to libblkid's own srcs.
+    includes = [
+        ".",
+        "src",
+    ],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+    ],
+)

@@ -1,0 +1,58 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("//:defs.bzl", "COPTS", "MAJOR", "MINOR", "PACKAGE_VERSION", "PATCH")
+
+# Generate the public libfdisk.h from the in-tree template.
+expand_template(
+    name = "libfdisk_h",
+    out = "libfdisk.h",
+    substitutions = {
+        "@LIBFDISK_VERSION@": PACKAGE_VERSION,
+        "@LIBFDISK_MAJOR_VERSION@": MAJOR,
+        "@LIBFDISK_MINOR_VERSION@": MINOR,
+        "@LIBFDISK_PATCH_VERSION@": PATCH,
+    },
+    template = "src/libfdisk.h.in",
+)
+
+# libfdisk — partition table manipulation library.
+# Mirrors the meson `lib_fdisk` both_libraries target.
+# The internal static lib `_fdisk` in meson is merged here into one cc_library.
+cc_library(
+    name = "libfdisk",
+    srcs = [
+        "src/fdiskP.h",
+        "src/init.c",
+        "src/field.c",
+        "src/item.c",
+        "src/test.c",
+        "src/ask.c",
+        "src/alignment.c",
+        "src/label.c",
+        "src/utils.c",
+        "src/context.c",
+        "src/parttype.c",
+        "src/partition.c",
+        "src/table.c",
+        "src/iter.c",
+        "src/script.c",
+        "src/version.c",
+        "src/wipe.c",
+        "src/sun.c",
+        "src/sgi.c",
+        "src/dos.c",
+        "src/bsd.c",
+        "src/gpt.c",
+    ],
+    hdrs = [":libfdisk_h"],
+    includes = ["."],
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:config",
+        "//include:headers",
+        "//lib:common",
+        "//libblkid:libblkid",
+        "//libuuid:libuuid",
+    ],
+)

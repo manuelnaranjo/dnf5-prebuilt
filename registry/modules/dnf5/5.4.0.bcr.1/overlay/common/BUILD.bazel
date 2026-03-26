@@ -1,0 +1,17 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:defs.bzl", "COPTS")
+
+cc_library(
+    name = "common",
+    srcs = glob(
+        ["**/*.cpp"],
+    ),
+    hdrs = glob(["**/*.hpp"]),
+    # Strip /common prefix so headers are included as "utils/string.hpp" etc.
+    strip_include_prefix = "/common",
+    copts = COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "@fmt"
+    ]
+)

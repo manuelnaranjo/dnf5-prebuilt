@@ -1,0 +1,14 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_test(
+    name = "run_tests",
+    srcs = ["runtestcases.sh"],
+    args = [
+        "$(location //tools:testsolv)",
+        "$(location testcases)/",
+    ],
+    data = [
+        "//tools:testsolv",
+        "testcases",
+    ] + glob(["testcases/**"]),
+)

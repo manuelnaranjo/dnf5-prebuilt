@@ -1,0 +1,101 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("//:defs.bzl", "COPTS", "LIBDNF5_DEFINES")
+
+# Generate conf/config.h from the CMake template.
+# Substitutions replicate the default CMake install paths.
+expand_template(
+    name = "config_h",
+    out = "conf/config.h",
+    template = "config.h.in",
+    substitutions = {
+        "@CMAKE_INSTALL_PREFIX@": "/usr",
+        "@CMAKE_INSTALL_FULL_LIBDIR@": "/usr/lib64",
+        # Assume rpmteSetVfyLevel is available in the rpm version being built against
+        "#cmakedefine HAVE_RPMTE_SETVFYLEVEL @HAVE_RPMTE_SETVFYLEVEL@": "#define HAVE_RPMTE_SETVFYLEVEL 1",
+    },
+)
+
+cc_library(
+    name = "bgettext",
+    srcs = [
+        "utils/bgettext/bgettext.c",
+    ],
+    deps = [
+        "//common",
+        "//include:libdnf5_headers",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "libdnf5",
+    srcs = glob(
+        [
+            "**/*.cpp",
+            # "**/*.c",
+            "**/*.hpp",
+        ],
+        exclude = [
+            # WITH_MODULEMD=OFF: exclude modulemd support
+            "module/**/*.cpp",
+            # WITH_COMPS=OFF: comps sources include <libxml/tree.h> directly
+            # but we still need libxml2 for utils/xml.hpp used by repo_sack.cpp
+            # "comps/**/*.cpp",
+        ],
+    ) + [":config_h"],
+
+    hdrs = [
+        "transaction/db/sql/create_tables.sql"
+    ],
+
+    # includes = ["."] adds libdnf5/ (source root) and bazel-bin/libdnf5/ (genfiles root)
+    # to the include path. This allows:
+    #   #include "conf/config.h"       (from generated conf/config.h)
+    #   #include "base/base_impl.hpp"  (from libdnf5/base/)
+    includes = ["."],
+
+    #data = ["transaction/db/sql/create_tables.sql"],
+
+    # LIBDNF5_DEFINES propagate to all dependents (needed for libsolv API compat)
+    defines = LIBDNF5_DEFINES,
+
+    local_defines = [
+        # Controls symbol visibility (export vs import)
+        "LIBDNF_BUILD_LIBRARY",
+        # Translation domain
+        "GETTEXT_DOMAIN=\\\"libdnf5\\\"",
+        # WITH_ACL=OFF: no HAVE_LIBACL
+    ],
+
+    copts = COPTS,
+
+    deps = [
+        "//common",
+        "//include:libdnf5_headers",
+        "@toml11",
+        "@fmt",
+        # json-c: module_name = "json-c", target = "json-c"
+        "@json-c",
+        # libsolv: solv (core) + solvext (extensions)
+        "@libsolv//:solv",
+        "@libsolv//:solvext",
+        # RPM library (librpmio is a transitive dep of librpm)
+        "@rpm//:librpm",
+        # libxml2: needed even with WITH_COMPS=OFF because utils/xml.hpp
+        # and repo/repo_sack.cpp include <libxml/tree.h> unconditionally
+        "@libxml2",
+        # glib-2.0: required by librepo's public API headers
+        "@glib//glib",
+        # librepo: repository metadata downloading
+        "@librepo//librepo",
+        # sqlite3: transaction history database
+        "@sqlite3",
+    ],
+
+    additional_linker_inputs = [
+        ":bgettext",
+    ],
+
+    visibility = ["//visibility:public"],
+)

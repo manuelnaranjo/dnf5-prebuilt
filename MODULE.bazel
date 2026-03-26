@@ -1,0 +1,25 @@
+module(
+    name = "dnf5_prebuilt",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "dnf5", version = "5.4.0.bcr.1")
+
+# needed to set which ssl lib to use
+bazel_dep(name = "curl", version = "8.12.0")
+
+# RBE toolchain
+bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
+
+buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
+
+buildbuddy.platform(buildbuddy_container_image = "UBUNTU24_04_IMAGE")
+
+register_toolchains(
+    "@toolchains_buildbuddy//toolchains/cc:ubuntu_gcc_x86_64",
+)
+
+# hermetic c/c++ toolchain
+bazel_dep(name = "llvm", version = "0.6.9")
+
+register_toolchains("@llvm//toolchain:all")

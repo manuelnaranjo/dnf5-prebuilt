@@ -1,0 +1,22 @@
+{
+    "url": "https://github.com/util-linux/util-linux/archive/refs/tags/v2.41.3.tar.gz",
+    "integrity": "sha256-Jdwv1wxra+wcDJfLEWNu3S1bJkXfIyTu9IINs2d71BI=",
+    "strip_prefix": "util-linux-2.41.3",
+    "overlay": {
+        "BUILD.bazel": "sha256-XgGR/64St6eNPRa3V6QtxDUGahECOACpCgS3QlB3pK4=",
+        "defs.bzl": "sha256-hJg2crclW7o6Q2md1iHokZp0J/APj0C06JDvtPP+rZE=",
+        "disk-utils/BUILD.bazel": "sha256-4iX3FvonW5UMTOcMXukkAYDSsLkXjhCCvvC5XIHTWno=",
+        "include/BUILD.bazel": "sha256-cGusguz3msNQ3BapWVkIttwTnsZfXsvh9YPs1NHiMyY=",
+        "lib/BUILD.bazel": "sha256-est12PA4qqcMDKjWsMJlP1+PTpe8OFwccDtFwMbabPE=",
+        "libblkid/BUILD.bazel": "sha256-CFTrxphUgUPgh1hwlAwO+M00BsIJY2oCyFK0kOSOVc4=",
+        "libfdisk/BUILD.bazel": "sha256-4pXcEJfCPz2VbtFFHh6hoduanSX6lwvXZgAjZy/M7r4=",
+        "liblastlog2/BUILD.bazel": "sha256-GDueoBV3+kK15W6FbyS3GHxU1FFr2+AuJ/B3y3dKFGg=",
+        "libmount/BUILD.bazel": "sha256-shvQILSQmfdrgKxGmJexVqm9FnqVvg8KD0LSJodw2eM=",
+        "libsmartcols/BUILD.bazel": "sha256-bDHHgOx3xNp/AIMqjVKexgbuEQ/z97mXtBDM/AavgrI=",
+        "libuuid/BUILD.bazel": "sha256-0vxs9FQJVK2CIrrULD0CnU7Urphcm1kTPoZof3t3Ypc=",
+        "misc-utils/BUILD.bazel": "sha256-5Pdq2VujT7t6BdjvexcrnAFr0iAWCubHsKmbPk0QONw=",
+        "schedutils/BUILD.bazel": "sha256-u3CcfntRTlm7DMsNyGnQxbcFbl8vFp4wnQY92OgVi5U=",
+        "term-utils/BUILD.bazel": "sha256-3LjAoPa9g3F7fUYgpaFVNZ400pNf0nvGHwiKXXtog0E=",
+        "text-utils/BUILD.bazel": "sha256-mwKzjdmsIsQi8AAkapHr3E4QezXlvjfKhYF+A/YdHmQ="
+    }
+}

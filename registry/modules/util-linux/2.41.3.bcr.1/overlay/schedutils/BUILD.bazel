@@ -1,0 +1,44 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:defs.bzl", "COPTS")
+
+# Scheduling utilities that need no local headers.
+[
+    cc_binary(
+        name = name,
+        srcs = [name + ".c"],
+        copts = COPTS,
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+        ],
+    )
+    for name in [
+        "ionice",
+        "taskset",
+        "coresched",
+    ]
+]
+
+# chrt and uclampset include sched_attr.h which lives in the same directory.
+[
+    cc_binary(
+        name = name,
+        srcs = [
+            "sched_attr.h",
+            name + ".c",
+        ],
+        copts = COPTS,
+        visibility = ["//visibility:public"],
+        deps = [
+            "//:config",
+            "//include:headers",
+            "//lib:common",
+        ],
+    )
+    for name in [
+        "chrt",
+        "uclampset",
+    ]
+]
