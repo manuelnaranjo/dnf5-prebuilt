@@ -1,0 +1,14 @@
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = [
+        "./.git/*",
+        "./registry/*",
+    ],
+)
+
+alias(
+    name = "dnf5",
+    actual = "@dnf5//dnf5",
+)
