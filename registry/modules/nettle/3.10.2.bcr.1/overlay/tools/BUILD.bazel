@@ -1,0 +1,83 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "sexp-conv",
+    srcs = [
+        "input.c",
+        "input.h",
+        "misc.c",
+        "misc.h",
+        "output.c",
+        "output.h",
+        "parse.c",
+        "parse.h",
+        "sexp-conv.c",
+    ],
+    defines = ["HAVE_CONFIG_H"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:getopt",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "nettle-hash",
+    srcs = [
+        "misc.c",
+        "misc.h",
+        "nettle-hash.c",
+    ],
+    defines = ["HAVE_CONFIG_H"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:getopt",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "nettle-pbkdf2",
+    srcs = [
+        "misc.c",
+        "misc.h",
+        "nettle-pbkdf2.c",
+    ],
+    defines = ["HAVE_CONFIG_H"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:getopt",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "nettle-lfib-stream",
+    srcs = ["nettle-lfib-stream.c"],
+    defines = ["HAVE_CONFIG_H"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "pkcs1-conv",
+    srcs = [
+        "misc.c",
+        "misc.h",
+        "pkcs1-conv.c",
+    ],
+    defines = ["HAVE_CONFIG_H"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:getopt",
+        "//:hogweed",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)

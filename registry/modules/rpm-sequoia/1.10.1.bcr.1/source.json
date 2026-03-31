@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/rpm-software-management/rpm-sequoia/archive/refs/tags/v1.10.1.tar.gz",
+    "integrity": "sha256-U5cFQwqwYTWMlD0aL4FABXdWh3pqywdP1v18Rpj59Z8=",
+    "strip_prefix": "rpm-sequoia-1.10.1",
+    "overlay": {
+        "BUILD.bazel": "sha256-SXp0N/0I5+ocaeMMTvglTaLwv7JxeHyaPvRNg6aJC8Q=",
+        "Cargo.bazel.lock": "sha256-hTzpqmD5s4IFFo48k5EmpWGT5RILL43ow+Jz7aboeOw=",
+        "Cargo.bazel.toml": "sha256-TjkBhARJT6b4BQkP/2H5RbQGd/6nPdzTXIzVVrnqQtE="
+    }
+}

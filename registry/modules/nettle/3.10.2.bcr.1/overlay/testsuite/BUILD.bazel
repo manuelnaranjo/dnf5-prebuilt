@@ -1,0 +1,294 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load(":nettle_test.bzl", "nettle_test")
+
+# ---------------------------------------------------------------------------
+# testutils — shared test infrastructure
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "testutils",
+    srcs = ["testutils.c"],
+    hdrs = ["testutils.h"],
+    defines = ["HAVE_CONFIG_H"],
+    deps = [
+        "//:hogweed",
+        "//:nettle",
+        "//:nettle_hdrs",
+        "//:nettle_test_support",
+        "//:non_nettle",
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# Symmetric crypto tests (TS_NETTLE_SOURCES)
+# ---------------------------------------------------------------------------
+nettle_test("aes-test")
+
+nettle_test("aes-keywrap-test")
+
+nettle_test("arcfour-test")
+
+nettle_test("arctwo-test")
+
+nettle_test("balloon-test")
+
+nettle_test("blowfish-test")
+
+nettle_test("bcrypt-test")
+
+nettle_test("cast128-test")
+
+nettle_test("base16-test")
+
+nettle_test("base64-test")
+
+nettle_test("camellia-test")
+
+nettle_test("chacha-test")
+
+nettle_test("cnd-memcpy-test")
+
+nettle_test("des-test")
+
+nettle_test("des3-test")
+
+nettle_test("md2-test")
+
+nettle_test("md4-test")
+
+nettle_test("md5-test")
+
+nettle_test("md5-compat-test")
+
+nettle_test("memeql-test")
+
+nettle_test("memxor-test")
+
+nettle_test("gosthash94-test")
+
+nettle_test("ripemd160-test")
+
+nettle_test("hkdf-test")
+
+nettle_test("salsa20-test")
+
+nettle_test("sha1-test")
+
+nettle_test("sha224-test")
+
+nettle_test("sha256-test")
+
+nettle_test("sha384-test")
+
+nettle_test("sha512-test")
+
+nettle_test("sha512-224-test")
+
+nettle_test("sha512-256-test")
+
+nettle_test("sha3-permute-test")
+
+nettle_test("sha3-224-test")
+
+nettle_test("sha3-256-test")
+
+nettle_test("sha3-384-test")
+
+nettle_test("sha3-512-test")
+
+nettle_test("shake128-test")
+
+nettle_test("shake256-test")
+
+nettle_test("streebog-test")
+
+nettle_test("sm3-test")
+
+nettle_test("sm4-test")
+
+nettle_test("serpent-test")
+
+nettle_test("twofish-test")
+
+nettle_test("version-test")
+
+nettle_test("knuth-lfib-test")
+
+nettle_test("cbc-test")
+
+nettle_test("cfb-test")
+
+nettle_test("ctr-test")
+
+nettle_test("gcm-test")
+
+nettle_test("eax-test")
+
+nettle_test("ccm-test")
+
+nettle_test("cmac-test")
+
+nettle_test("ocb-test")
+
+nettle_test("siv-cmac-test")
+
+nettle_test("siv-gcm-test")
+
+nettle_test("poly1305-test")
+
+nettle_test("chacha-poly1305-test")
+
+nettle_test("hmac-test")
+
+nettle_test("umac-test")
+
+nettle_test("meta-hash-test")
+
+nettle_test("meta-cipher-test")
+
+nettle_test("meta-aead-test")
+
+nettle_test("meta-armor-test")
+
+nettle_test("meta-mac-test")
+
+nettle_test("buffer-test")
+
+cc_test(
+    name = "yarrow-test",
+    srcs = ["yarrow-test.c"],
+    data = ["gold-bug.txt"],
+    defines = ["HAVE_CONFIG_H"],
+    env = {"srcdir": "testsuite"},
+    deps = [
+        ":testutils",
+        "//:hogweed",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)
+
+nettle_test("xts-test")
+
+nettle_test("pbkdf2-test")
+
+nettle_test("drbg-ctr-aes256-test")
+
+# x86 IBT test — requires Intel CET hardware; mark manual on non-CET systems
+cc_test(
+    name = "x86-ibt-test",
+    srcs = ["x86-ibt-test.c"],
+    defines = ["HAVE_CONFIG_H"],
+    tags = ["manual"],
+    deps = [
+        ":testutils",
+        "//:hogweed",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# Public-key crypto tests (TS_HOGWEED_SOURCES)
+# ---------------------------------------------------------------------------
+nettle_test("sexp-test")
+
+nettle_test("sexp-format-test")
+
+nettle_test("rsa2sexp-test")
+
+nettle_test("sexp2rsa-test")
+
+nettle_test("bignum-test")
+
+nettle_test("random-prime-test")
+
+nettle_test("pkcs1-test")
+
+nettle_test("pkcs1-sec-decrypt-test")
+
+nettle_test("pss-test")
+
+nettle_test("rsa-sign-tr-test")
+
+nettle_test("pss-mgf1-test")
+
+nettle_test("rsa-pss-sign-tr-test")
+
+nettle_test("rsa-test")
+
+nettle_test("rsa-encrypt-test")
+
+nettle_test("rsa-keygen-test")
+
+nettle_test("rsa-oaep-encrypt-test")
+
+nettle_test("rsa-sec-decrypt-test")
+
+nettle_test("rsa-compute-root-test")
+
+nettle_test("dsa-test")
+
+nettle_test("dsa-keygen-test")
+
+nettle_test("curve25519-dh-test")
+
+nettle_test("curve448-dh-test")
+
+nettle_test("ecc-mod-arith-test")
+
+nettle_test("ecc-mod-test")
+
+nettle_test("ecc-modinv-test")
+
+nettle_test("ecc-redc-test")
+
+nettle_test("ecc-sqrt-test")
+
+nettle_test("ecc-dup-test")
+
+nettle_test("ecc-add-test")
+
+nettle_test("ecc-mul-g-test")
+
+nettle_test("ecc-mul-a-test")
+
+nettle_test("ecdsa-sign-test")
+
+nettle_test("ecdsa-verify-test")
+
+nettle_test("ecdsa-keygen-test")
+
+nettle_test("ecdh-test")
+
+nettle_test("eddsa-compress-test")
+
+nettle_test("eddsa-sign-test")
+
+nettle_test("eddsa-verify-test")
+
+nettle_test("ed25519-test")
+
+nettle_test("ed448-test")
+
+nettle_test("gostdsa-sign-test")
+
+nettle_test("gostdsa-verify-test")
+
+nettle_test("gostdsa-keygen-test")
+
+nettle_test("gostdsa-vko-test")
+
+# ---------------------------------------------------------------------------
+# dlopen-test — requires dynamic linking, mark manual
+# ---------------------------------------------------------------------------
+cc_test(
+    name = "dlopen-test",
+    srcs = ["dlopen-test.c"],
+    defines = ["HAVE_CONFIG_H"],
+    tags = ["manual"],
+    deps = [
+        ":testutils",
+        "//:nettle",
+        "//:nettle_hdrs",
+    ],
+)

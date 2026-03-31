@@ -1,5 +1,5 @@
 {
-    "homepage": "https://rpm.org",
+    "homepage": "https://www.lysator.liu.se/~nisse/nettle/",
     "maintainers": [
         {
             "email": "manuel.naranjo@gmail.com",
@@ -9,10 +9,11 @@
         }
     ],
     "repository": [
-        "github:rpm-software-management/rpm"
+        "github:gnutls/nettle"
     ],
     "versions": [
-        "6.0.1.bcr.2"
+        "3.10.2.bcr.1",
+        "4.0.bcr.1"
     ],
     "yanked_versions": {}
 }

@@ -1,0 +1,12 @@
+{
+    "url": "https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz",
+    "integrity": "sha256-/p/1HLHyq7XmWmuMEKktoKtaturybn/CtnXEXx+1GbU=",
+    "strip_prefix": "nettle-3.10.2",
+    "overlay": {
+        "BUILD.bazel": "sha256-O5UKIfPYXe9QWTHPmo5EPLzlsTj1VgafmbwJ3X7biB8=",
+        "nettle_gen.bzl": "sha256-NK9nStagcnboP9n8glVpoLJDIxx1p+nfq0iEzZFhebw=",
+        "testsuite/BUILD.bazel": "sha256-cDbrGZDr08MiKhfnYCjlGoTgBSBS1kIK+n8swHHzmq4=",
+        "testsuite/nettle_test.bzl": "sha256-PPbmYU5Ap4AXIxjsPYy39jVFSTTHyNRfnT1DS9XV9e8=",
+        "tools/BUILD.bazel": "sha256-8Fp7lYQCpzX+iquYw7W/QLSg0lTt7cNPNgfDUmNLysQ="
+    }
+}

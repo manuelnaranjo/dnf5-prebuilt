@@ -9,10 +9,10 @@
         }
     ],
     "repository": [
-        "github:rpm-software-management/rpm"
+        "github:rpm-software-management/rpm-sequoia"
     ],
     "versions": [
-        "6.0.1.bcr.2"
+        "1.10.1.bcr.1"
     ],
     "yanked_versions": {}
 }

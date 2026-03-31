@@ -1,6 +1,6 @@
 module(
     name = "rpm",
-    version = "6.0.1.bcr.1",
+    version = "6.0.1.bcr.2",
     bazel_compatibility = [">=7.2.1"],
 )
 
@@ -17,3 +17,4 @@ bazel_dep(name = "xz", version = "5.4.5.bcr.8")
 bazel_dep(name = "lua", version = "5.5.0")
 bazel_dep(name = "libarchive", version = "3.8.1.bcr.2")
 bazel_dep(name = "openssl", version = "3.5.5.bcr.1")
+bazel_dep(name = "rpm-sequoia", version = "1.10.1.bcr.1")

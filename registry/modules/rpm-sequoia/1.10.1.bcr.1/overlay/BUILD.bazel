@@ -1,0 +1,167 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_shared_library")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+
+# ---------------------------------------------------------------------------
+# nettle-sys replacement: hermetic bindings via rust_bindgen + nettle 3.10.2
+#
+# The upstream nettle-sys build script runs bindgen against system nettle
+# headers, which breaks in a hermetic sandbox. We replace the library target
+# (via crate.annotation override_target_lib) with a rust_bindgen-generated
+# target wrapped in a thin rust_library that adds the config module constants
+# required by the nettle Rust crate.
+# ---------------------------------------------------------------------------
+
+# Wrapper header that mirrors nettle-sys 2.3.1/bindgen-wrapper.h exactly,
+# plus curve448.h and ocb.h which build.rs conditionally appends when
+# HAVE_CV448 and HAVE_OCB are detected (both true for nettle >= 3.6).
+write_file(
+    name = "nettle_bindgen_wrapper_h",
+    out = "nettle-bindgen-wrapper.h",
+    content = [
+        "#include <nettle/aes.h>",
+        "#include <nettle/arcfour.h>",
+        "#include <nettle/arctwo.h>",
+        "#include <nettle/asn1.h>",
+        "#include <nettle/base16.h>",
+        "#include <nettle/base64.h>",
+        "#include <nettle/bignum.h>",
+        "#include <nettle/blowfish.h>",
+        "#include <nettle/buffer.h>",
+        "#include <nettle/camellia.h>",
+        "#include <nettle/cast128.h>",
+        "#include <nettle/cbc.h>",
+        "#include <nettle/ccm.h>",
+        "#include <nettle/cfb.h>",
+        "#include <nettle/chacha-poly1305.h>",
+        "#include <nettle/chacha.h>",
+        "#include <nettle/ctr.h>",
+        "#include <nettle/curve25519.h>",
+        "#include <nettle/des.h>",
+        "#include <nettle/dsa.h>",
+        "#include <nettle/eax.h>",
+        "#include <nettle/ecc-curve.h>",
+        "#include <nettle/ecc.h>",
+        "#include <nettle/ecdsa.h>",
+        "#include <nettle/eddsa.h>",
+        "#include <nettle/gcm.h>",
+        "#include <nettle/gosthash94.h>",
+        "#include <nettle/hkdf.h>",
+        "#include <nettle/hmac.h>",
+        "#include <nettle/knuth-lfib.h>",
+        "#include <nettle/macros.h>",
+        "#include <nettle/md2.h>",
+        "#include <nettle/md4.h>",
+        "#include <nettle/md5.h>",
+        "#include <nettle/memops.h>",
+        "#include <nettle/memxor.h>",
+        "#include <nettle/nettle-meta.h>",
+        "#include <nettle/nettle-types.h>",
+        "#include <nettle/pbkdf2.h>",
+        "#include <nettle/pgp.h>",
+        "#include <nettle/pkcs1.h>",
+        "#include <nettle/poly1305.h>",
+        "#include <nettle/pss-mgf1.h>",
+        "#include <nettle/pss.h>",
+        "#include <nettle/realloc.h>",
+        "#include <nettle/ripemd160.h>",
+        "#include <nettle/rsa.h>",
+        "#include <nettle/salsa20.h>",
+        "#include <nettle/serpent.h>",
+        "#include <nettle/sexp.h>",
+        "#include <nettle/sha.h>",
+        "#include <nettle/sha1.h>",
+        "#include <nettle/sha2.h>",
+        "#include <nettle/sha3.h>",
+        "#include <nettle/twofish.h>",
+        "#include <nettle/umac.h>",
+        "#include <nettle/version.h>",
+        "#include <nettle/yarrow.h>",
+        # Conditionally included by nettle-sys build.rs when HAVE_CV448/HAVE_OCB:
+        "#include <nettle/curve448.h>",
+        "#include <nettle/ocb.h>",
+    ],
+)
+
+# rust_bindgen requires the header to live in cc_lib's transitive hdrs.
+# Wrap the generated header in a cc_library that propagates hogweed's includes.
+cc_library(
+    name = "nettle_bindgen_cc",
+    hdrs = [":nettle_bindgen_wrapper_h"],
+    deps = ["@nettle//:hogweed"],
+)
+
+# Generate raw FFI bindings using the hermetic LLVM toolchain.
+# Flags mirror what nettle-sys/build.rs passes to bindgen.
+rust_bindgen(
+    name = "nettle_sys_inner",
+    header = ":nettle_bindgen_wrapper_h",
+    cc_lib = ":nettle_bindgen_cc",
+    bindgen_flags = [
+        "--blocklist-type=max_align_t",
+        "--blocklist-function=strtold",
+        "--blocklist-function=qecvt",
+        "--blocklist-function=qfcvt",
+        "--blocklist-function=qgcvt",
+        "--blocklist-function=qecvt_r",
+        "--blocklist-function=qfcvt_r",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Wrapper that includes the generated bindings via include!() and adds the config
+# module. The nettle Rust crate reads nettle_sys::config::{HAVE_CV448, HAVE_OCB}.
+# Both are true for nettle >= 3.6 (including 3.10.2).
+#
+# The generated bindings file path is passed via the NETTLE_SYS_BINDINGS_RS env
+# var, which rustc_env expands to the execroot-relative path of :nettle_sys_inner.
+write_file(
+    name = "nettle_sys_lib_rs",
+    out = "nettle_sys_lib.rs",
+    content = [
+        "#![allow(non_upper_case_globals)]",
+        "#![allow(non_camel_case_types)]",
+        "#![allow(non_snake_case)]",
+        'include!(env!("NETTLE_SYS_BINDINGS_RS"));',
+        "pub mod config {",
+        "    /// Cv448/Ed448 support in Nettle (true for nettle >= 3.6).",
+        "    pub const HAVE_CV448: bool = true;",
+        "    /// OCB support in Nettle (true for nettle >= 3.6).",
+        "    pub const HAVE_OCB: bool = true;",
+        "}",
+    ],
+)
+
+rust_library(
+    name = "nettle_sys",
+    srcs = [":nettle_sys_lib_rs"],
+    crate_name = "nettle_sys",
+    edition = "2021",
+    compile_data = [":nettle_sys_inner"],
+    rustc_env = {
+        "NETTLE_SYS_BINDINGS_RS": "$(location :nettle_sys_inner)",
+    },
+    deps = [":nettle_bindgen_cc"],
+    visibility = ["//visibility:public"],
+)
+
+# ---------------------------------------------------------------------------
+# The rpm-sequoia shared library (C ABI cdylib).
+# ---------------------------------------------------------------------------
+rust_shared_library(
+    name = "rpm_sequoia",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2021",
+    crate_features = ["crypto-nettle"],
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:chrono",
+        "@crates//:lazy_static",
+        "@crates//:libc",
+        "@crates//:sequoia-openpgp",
+        "@crates//:sequoia-policy-config",
+        "@crates//:thiserror",
+    ],
+    visibility = ["//visibility:public"],
+)

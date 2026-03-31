@@ -1,0 +1,45 @@
+module(name = "rpm-sequoia", version = "1.10.1.bcr.1")
+
+bazel_dep(name = "platforms",    version = "1.0.0")
+bazel_dep(name = "rules_cc",     version = "0.2.17")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_rust",         version = "0.69.0")
+bazel_dep(name = "rules_rust_bindgen", version = "0.69.0")
+bazel_dep(name = "nettle",             version = "3.10.2.bcr.1")
+
+register_toolchains("@rules_rust_bindgen//:default_bindgen_toolchain")
+
+# Rust toolchain — pin to minimum supported version (1.85)
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.85.0"],
+)
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+# Crate universe — resolve all 264 Rust crate deps from the existing Cargo.lock.
+# Using crypto-nettle feature: Nettle C library as the cryptography backend.
+crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+    supported_platform_triples = [
+        "x86_64-unknown-linux-gnu",
+        "aarch64-unknown-linux-gnu",
+        "s390x-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+    ],
+)
+# Replace nettle-sys's build-script-driven bindgen with a hermetic rust_bindgen
+# target using @nettle//:hogweed (nettle 3.10.2). The config module constants are
+# provided by a thin rust_library wrapper defined at //:nettle_sys.
+crate.annotation(
+    crate = "nettle-sys",
+    version = "2.3.1",
+    override_target_lib = "//:nettle_sys",
+)
+
+use_repo(crate, "crates")

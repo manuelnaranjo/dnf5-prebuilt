@@ -1,0 +1,50 @@
+# This file is used by the Bazel build only (crate_universe from_cargo).
+# It mirrors Cargo.toml but selects crypto-rust as the default backend
+# to avoid a dependency on libnettle (not available in BCR).
+# The original Cargo.toml (with crypto-nettle default) is untouched.
+
+[package]
+name = "rpm-sequoia"
+description = "An implementation of the RPM PGP interface using Sequoia."
+version = "1.10.1"
+authors = ["Neal H. Walfield <neal@sequoia-pgp.org>"]
+homepage = "https://sequoia-pgp.org/"
+repository = "https://github.com/rpm-software-management/rpm-sequoia"
+readme = "README.md"
+keywords = ["cryptography", "openpgp", "pgp", "signing"]
+categories = ["cryptography", "authentication"]
+license = "LGPL-2.0-or-later"
+edition = "2021"
+rust-version = "1.85"
+build = "build.rs"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = [ "std" ] }
+lazy_static = "1"
+libc = "0.2"
+sequoia-openpgp = { version = "2", default-features = false }
+sequoia-policy-config = "0.8"
+thiserror = { version = ">=1, <3" }
+
+[build-dependencies]
+anyhow = "1"
+cdylib-link-lines = "0.1.4"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["crypto-rust"]
+crypto-nettle = ["sequoia-openpgp/crypto-nettle"]
+crypto-rust = ["sequoia-openpgp/crypto-rust", "sequoia-openpgp/allow-experimental-crypto"]
+crypto-cng = ["sequoia-openpgp/crypto-cng"]
+crypto-openssl = ["sequoia-openpgp/crypto-openssl"]
+crypto-botan = ["sequoia-openpgp/crypto-botan"]
+crypto-botan2 = ["sequoia-openpgp/crypto-botan2"]

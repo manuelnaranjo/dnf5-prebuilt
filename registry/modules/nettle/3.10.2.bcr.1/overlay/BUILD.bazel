@@ -1,0 +1,835 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load(":nettle_gen.bzl", "des_header", "ecc_header")
+
+# ---------------------------------------------------------------------------
+# config.h — written by hand, no autoconf
+# WORDS_BIGENDIAN is only defined on big-endian targets (s390x)
+# Never write "#define HAVE_FOO 0" — #ifdef treats any definition (incl. 0) as true
+# ---------------------------------------------------------------------------
+write_file(
+    name = "config_h",
+    out = "config.h",
+    content = [
+        "/* Bazel-generated config.h for nettle 3.10.2 (s390x, big-endian) */",
+        "#ifndef NETTLE_CONFIG_H_INCLUDED",
+        "#define NETTLE_CONFIG_H_INCLUDED",
+        "#define WITH_HOGWEED 1",
+        "#define HAVE_NATIVE_64_BIT 1",
+        "#define HAVE_BUILTIN_BSWAP64 1",
+        "#define HAVE_BUILTIN_BSWAP32 1",
+        "#define HAVE_ALLOCA 1",
+        "#define HAVE_GETLINE 1",
+        "#define PACKAGE_NAME \"nettle\"",
+        "#define PACKAGE_VERSION \"3.10.2\"",
+        "#define PACKAGE_STRING \"nettle 3.10.2\"",
+    ] + select({
+        "@platforms//cpu:s390x": [
+            "#define WORDS_BIGENDIAN 1",
+        ],
+        "//conditions:default": [],
+    }) + [
+        "#define HAVE_GCC_ATTRIBUTE 1",
+        "#if defined(__GNUC__) && HAVE_GCC_ATTRIBUTE",
+        "# define NORETURN __attribute__ ((__noreturn__))",
+        "# define PRINTF_STYLE(f, a) __attribute__ ((__format__ (__printf__, f, a)))",
+        "# define UNUSED __attribute__ ((__unused__))",
+        "#else",
+        "# define NORETURN",
+        "# define PRINTF_STYLE(f, a)",
+        "# define UNUSED",
+        "#endif",
+        "#endif /* NETTLE_CONFIG_H_INCLUDED */",
+    ],
+)
+
+# ---------------------------------------------------------------------------
+# version.h — generated from template
+# ---------------------------------------------------------------------------
+expand_template(
+    name = "version_h",
+    out = "version.h",
+    substitutions = {
+        "@MAJOR_VERSION@": "3",
+        "@MINOR_VERSION@": "10",
+        "@NETTLE_USE_MINI_GMP@": "0",
+        "@GMP_NUMB_BITS@": "64",
+    },
+    template = "version.h.in",
+)
+
+# ---------------------------------------------------------------------------
+# Host tools for generating ECC and DES tables
+# ---------------------------------------------------------------------------
+# eccdata.c textually includes mini-gmp.c — use a library with textual_hdrs
+# so mini-gmp.c is in the sandbox but NOT compiled as a separate TU
+cc_library(
+    name = "mini_gmp_textual",
+    textual_hdrs = [
+        "mini-gmp.c",
+        "mini-gmp.h",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+cc_binary(
+    name = "eccdata",
+    srcs = ["eccdata.c"],
+    visibility = ["//visibility:private"],
+    deps = [":mini_gmp_textual"],
+)
+
+cc_binary(
+    name = "desdata",
+    srcs = [
+        "desdata.c",
+        "desinfo.h",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# ---------------------------------------------------------------------------
+# Generated ECC curve headers (NUMB_BITS=64 for all target architectures)
+# ---------------------------------------------------------------------------
+ecc_header(
+    name = "ecc_secp192r1_h",
+    out = "ecc-secp192r1.h",
+    c = "6",
+    curve = "secp192r1",
+    k = "8",
+)
+
+ecc_header(
+    name = "ecc_secp224r1_h",
+    out = "ecc-secp224r1.h",
+    c = "7",
+    curve = "secp224r1",
+    k = "16",
+)
+
+ecc_header(
+    name = "ecc_secp256r1_h",
+    out = "ecc-secp256r1.h",
+    c = "6",
+    curve = "secp256r1",
+    k = "11",
+)
+
+ecc_header(
+    name = "ecc_secp384r1_h",
+    out = "ecc-secp384r1.h",
+    c = "6",
+    curve = "secp384r1",
+    k = "32",
+)
+
+ecc_header(
+    name = "ecc_secp521r1_h",
+    out = "ecc-secp521r1.h",
+    c = "6",
+    curve = "secp521r1",
+    k = "44",
+)
+
+ecc_header(
+    name = "ecc_curve25519_h",
+    out = "ecc-curve25519.h",
+    c = "6",
+    curve = "curve25519",
+    k = "11",
+)
+
+ecc_header(
+    name = "ecc_curve448_h",
+    out = "ecc-curve448.h",
+    c = "6",
+    curve = "curve448",
+    k = "38",
+)
+
+ecc_header(
+    name = "ecc_gost_gc256b_h",
+    out = "ecc-gost-gc256b.h",
+    c = "6",
+    curve = "gost_gc256b",
+    k = "11",
+)
+
+ecc_header(
+    name = "ecc_gost_gc512a_h",
+    out = "ecc-gost-gc512a.h",
+    c = "6",
+    curve = "gost_gc512a",
+    k = "43",
+)
+
+# ---------------------------------------------------------------------------
+# Generated DES S-box headers
+# ---------------------------------------------------------------------------
+des_header(
+    name = "rotors_h",
+    out = "rotors.h",
+    table = "rotors",
+)
+
+des_header(
+    name = "keymap_h",
+    out = "keymap.h",
+    table = "keymap",
+)
+
+# ---------------------------------------------------------------------------
+# Public header sets (split: symmetric vs. asymmetric/GMP-dependent)
+# ---------------------------------------------------------------------------
+NETTLE_PUBLIC_HDRS = [
+    "aes.h",
+    "arcfour.h",
+    "arctwo.h",
+    "balloon.h",
+    "base16.h",
+    "base64.h",
+    "blowfish.h",
+    "buffer.h",
+    "camellia.h",
+    "cast128.h",
+    "cbc.h",
+    "ccm.h",
+    "cfb.h",
+    "chacha.h",
+    "chacha-poly1305.h",
+    "cmac.h",
+    "ctr.h",
+    "des.h",
+    "drbg-ctr.h",
+    "eax.h",
+    "gcm.h",
+    "gosthash94.h",
+    "hmac.h",
+    "hkdf.h",
+    "knuth-lfib.h",
+    "macros.h",
+    "md2.h",
+    "md4.h",
+    "md5.h",
+    "md5-compat.h",
+    "memops.h",
+    "memxor.h",
+    "nettle-meta.h",
+    "nettle-types.h",
+    "nist-keywrap.h",
+    "ocb.h",
+    "pbkdf2.h",
+    "poly1305.h",
+    "realloc.h",
+    "ripemd160.h",
+    "salsa20.h",
+    "serpent.h",
+    "sha.h",
+    "sha1.h",
+    "sha2.h",
+    "sha3.h",
+    "siv-cmac.h",
+    "siv-gcm.h",
+    "sm3.h",
+    "sm4.h",
+    "streebog.h",
+    "twofish.h",
+    "umac.h",
+    "xts.h",
+    "yarrow.h",
+]
+
+HOGWEED_PUBLIC_HDRS = [
+    "asn1.h",
+    "bignum.h",
+    "curve25519.h",
+    "curve448.h",
+    "dsa.h",
+    "dsa-compat.h",
+    "ecc.h",
+    "ecc-curve.h",
+    "ecdsa.h",
+    "eddsa.h",
+    "gostdsa.h",
+    "pgp.h",
+    "pkcs1.h",
+    "pss.h",
+    "pss-mgf1.h",
+    "rsa.h",
+    "sexp.h",
+]
+
+# ---------------------------------------------------------------------------
+# Bare-access header library (no include_prefix) for internal tools/tests
+# that include headers with bare filenames like #include "aes.h"
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "nettle_hdrs",
+    hdrs = NETTLE_PUBLIC_HDRS + HOGWEED_PUBLIC_HDRS + [
+        ":config_h",
+        ":version_h",
+    ],
+    visibility = [
+        "//testsuite:__pkg__",
+        "//tools:__pkg__",
+    ],
+)
+
+# Internal headers needed by the testsuite
+cc_library(
+    name = "nettle_test_support",
+    hdrs = [
+        "ecc-internal.h",
+        "gmp-glue.h",
+        "nettle-internal.h",
+    ],
+    deps = ["@gmp//:gmp"],
+    visibility = ["//testsuite:__pkg__"],
+)
+
+# ---------------------------------------------------------------------------
+# getopt — used by tools
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "getopt",
+    srcs = [
+        "getopt.c",
+        "getopt1.c",
+    ],
+    hdrs = [
+        "getopt.h",
+        "getopt_int.h",
+    ],
+    # Do NOT define HAVE_CONFIG_H here: getopt.c uses #include <config.h>
+    # with angle brackets which would require config.h on the -I path.
+    # Without the define, getopt skips the include and uses its own fallbacks.
+    visibility = ["//tools:__pkg__"],
+)
+
+# ---------------------------------------------------------------------------
+# non-nettle — cipher test helper used by testsuite
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "non_nettle",
+    srcs = ["non-nettle.c"],
+    hdrs = ["non-nettle.h"],
+    defines = ["HAVE_CONFIG_H"],
+    visibility = ["//testsuite:__pkg__"],
+    deps = [":nettle_hdrs"],
+)
+
+# ---------------------------------------------------------------------------
+# libnettle — symmetric cryptography library
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "nettle",
+    srcs = [
+        # AES
+        "aes-decrypt-internal.c",
+        "aes-decrypt.c",
+        "aes-decrypt-table.c",
+        "aes128-decrypt.c",
+        "aes192-decrypt.c",
+        "aes256-decrypt.c",
+        "aes-encrypt-internal.c",
+        "aes-encrypt.c",
+        "aes-encrypt-table.c",
+        "aes128-encrypt.c",
+        "aes192-encrypt.c",
+        "aes256-encrypt.c",
+        "aes-invert-internal.c",
+        "aes-set-key-internal.c",
+        "aes-set-encrypt-key.c",
+        "aes-set-decrypt-key.c",
+        "aes128-set-encrypt-key.c",
+        "aes128-set-decrypt-key.c",
+        "aes128-meta.c",
+        "aes192-set-encrypt-key.c",
+        "aes192-set-decrypt-key.c",
+        "aes192-meta.c",
+        "aes256-set-encrypt-key.c",
+        "aes256-set-decrypt-key.c",
+        "aes256-meta.c",
+        "nist-keywrap.c",
+        # Stream/block ciphers
+        "arcfour.c",
+        "arctwo.c",
+        "arctwo-meta.c",
+        "blowfish.c",
+        "blowfish-bcrypt.c",
+        # Balloon hashing
+        "balloon.c",
+        "balloon-sha1.c",
+        "balloon-sha256.c",
+        "balloon-sha384.c",
+        "balloon-sha512.c",
+        # Base encodings
+        "base16-encode.c",
+        "base16-decode.c",
+        "base16-meta.c",
+        "base64-encode.c",
+        "base64-decode.c",
+        "base64-meta.c",
+        "base64url-encode.c",
+        "base64url-decode.c",
+        "base64url-meta.c",
+        # Buffer
+        "buffer.c",
+        "buffer-init.c",
+        # Camellia
+        "camellia-crypt-internal.c",
+        "camellia-table.c",
+        "camellia-absorb.c",
+        "camellia-invert-key.c",
+        "camellia128-set-encrypt-key.c",
+        "camellia128-crypt.c",
+        "camellia128-set-decrypt-key.c",
+        "camellia128-meta.c",
+        "camellia192-meta.c",
+        "camellia256-set-encrypt-key.c",
+        "camellia256-crypt.c",
+        "camellia256-set-decrypt-key.c",
+        "camellia256-meta.c",
+        # CAST-128
+        "cast128.c",
+        "cast128-meta.c",
+        # Block cipher modes
+        "cbc.c",
+        "cbc-aes128-encrypt.c",
+        "cbc-aes192-encrypt.c",
+        "cbc-aes256-encrypt.c",
+        "ccm.c",
+        "ccm-aes128.c",
+        "ccm-aes192.c",
+        "ccm-aes256.c",
+        "cfb.c",
+        # SIV
+        "siv-cmac.c",
+        "siv-cmac-aes128.c",
+        "siv-cmac-aes256.c",
+        "siv-gcm.c",
+        "siv-gcm-aes128.c",
+        "siv-gcm-aes256.c",
+        # ChaCha
+        "cnd-memcpy.c",
+        "chacha-crypt.c",
+        "chacha-core-internal.c",
+        "chacha-poly1305.c",
+        "chacha-poly1305-meta.c",
+        "chacha-set-key.c",
+        "chacha-set-nonce.c",
+        # CTR / DES
+        "ctr.c",
+        "ctr16.c",
+        "des.c",
+        "des3.c",
+        # EAX / GCM / GHASH
+        "eax.c",
+        "eax-aes128.c",
+        "eax-aes128-meta.c",
+        "ghash-set-key.c",
+        "ghash-update.c",
+        "siv-ghash-set-key.c",
+        "siv-ghash-update.c",
+        "gcm.c",
+        "gcm-aes.c",
+        "gcm-aes128.c",
+        "gcm-aes128-meta.c",
+        "gcm-aes192.c",
+        "gcm-aes192-meta.c",
+        "gcm-aes256.c",
+        "gcm-aes256-meta.c",
+        "gcm-camellia128.c",
+        "gcm-camellia128-meta.c",
+        "gcm-camellia256.c",
+        "gcm-camellia256-meta.c",
+        "gcm-sm4.c",
+        "gcm-sm4-meta.c",
+        # CMAC / OCB
+        "cmac.c",
+        "cmac64.c",
+        "cmac-aes128.c",
+        "cmac-aes256.c",
+        "cmac-des3.c",
+        "cmac-aes128-meta.c",
+        "cmac-aes256-meta.c",
+        "cmac-des3-meta.c",
+        # GOST
+        "gost28147.c",
+        "gosthash94.c",
+        "gosthash94-meta.c",
+        # HMAC
+        "hmac.c",
+        "hmac-gosthash94.c",
+        "hmac-md5.c",
+        "hmac-ripemd160.c",
+        "hmac-sha1.c",
+        "hmac-sha224.c",
+        "hmac-sha256.c",
+        "hmac-sha384.c",
+        "hmac-sha512.c",
+        "hmac-streebog.c",
+        "hmac-sm3.c",
+        "hmac-md5-meta.c",
+        "hmac-ripemd160-meta.c",
+        "hmac-sha1-meta.c",
+        "hmac-sha224-meta.c",
+        "hmac-sha256-meta.c",
+        "hmac-sha384-meta.c",
+        "hmac-sha512-meta.c",
+        "hmac-gosthash94-meta.c",
+        "hmac-streebog-meta.c",
+        "hmac-sm3-meta.c",
+        # KDF
+        "knuth-lfib.c",
+        "hkdf.c",
+        # Hash functions
+        "md2.c",
+        "md2-meta.c",
+        "md4.c",
+        "md4-meta.c",
+        "md5.c",
+        "md5-compat.c",
+        "md5-meta.c",
+        # Memory operations
+        "memeql-sec.c",
+        "memxor.c",
+        "memxor3.c",
+        # Meta / lookup
+        "nettle-lookup-hash.c",
+        "nettle-meta-aeads.c",
+        "nettle-meta-armors.c",
+        "nettle-meta-ciphers.c",
+        "nettle-meta-hashes.c",
+        "nettle-meta-macs.c",
+        # OCB / PBKDF2
+        "ocb.c",
+        "ocb-aes128.c",
+        "pbkdf2.c",
+        "pbkdf2-hmac-gosthash94.c",
+        "pbkdf2-hmac-sha1.c",
+        "pbkdf2-hmac-sha256.c",
+        "pbkdf2-hmac-sha384.c",
+        "pbkdf2-hmac-sha512.c",
+        # Poly1305
+        "poly1305-aes.c",
+        "poly1305-internal.c",
+        "poly1305-update.c",
+        # Realloc
+        "realloc.c",
+        # RIPEMD-160
+        "ripemd160.c",
+        "ripemd160-compress.c",
+        "ripemd160-meta.c",
+        # Salsa20
+        "salsa20-core-internal.c",
+        "salsa20-crypt-internal.c",
+        "salsa20-crypt.c",
+        "salsa20r12-crypt.c",
+        "salsa20-set-key.c",
+        "salsa20-set-nonce.c",
+        "salsa20-128-set-key.c",
+        "salsa20-256-set-key.c",
+        # SHA-1
+        "sha1.c",
+        "sha1-compress.c",
+        "sha1-meta.c",
+        # SHA-2
+        "sha256.c",
+        "sha256-compress-n.c",
+        "sha224-meta.c",
+        "sha256-meta.c",
+        "sha512.c",
+        "sha512-compress.c",
+        "sha384-meta.c",
+        "sha512-meta.c",
+        "sha512-224-meta.c",
+        "sha512-256-meta.c",
+        # SHA-3
+        "sha3.c",
+        "sha3-permute.c",
+        "sha3-224.c",
+        "sha3-224-meta.c",
+        "sha3-256.c",
+        "sha3-256-meta.c",
+        "sha3-384.c",
+        "sha3-384-meta.c",
+        "sha3-512.c",
+        "sha3-512-meta.c",
+        "sha3-shake.c",
+        "shake128.c",
+        "shake256.c",
+        # SM3 / SM4
+        "sm3.c",
+        "sm3-meta.c",
+        # Serpent / Twofish
+        "serpent-set-key.c",
+        "serpent-encrypt.c",
+        "serpent-decrypt.c",
+        "serpent-meta.c",
+        "streebog.c",
+        "streebog-meta.c",
+        "twofish.c",
+        "twofish-meta.c",
+        "sm4.c",
+        "sm4-meta.c",
+        # UMAC
+        "umac-nh.c",
+        "umac-nh-n.c",
+        "umac-l2.c",
+        "umac-l3.c",
+        "umac-poly64.c",
+        "umac-poly128.c",
+        "umac-set-key.c",
+        "umac32.c",
+        "umac64.c",
+        "umac96.c",
+        "umac128.c",
+        # Misc
+        "version.c",
+        "write-be32.c",
+        "write-le32.c",
+        "write-le64.c",
+        "yarrow256.c",
+        "yarrow_key_event.c",
+        "xts.c",
+        "xts-aes128.c",
+        "xts-aes256.c",
+        "drbg-ctr-aes256.c",
+        # Private (internal) headers — listed in srcs so they're in the sandbox
+        "aes-internal.h",
+        "block-internal.h",
+        "blowfish-internal.h",
+        "bswap-internal.h",
+        "camellia-internal.h",
+        "cast128_sboxes.h",
+        "chacha-internal.h",
+        "ctr-internal.h",
+        "desCode.h",
+        "desinfo.h",
+        "fat-setup.h",
+        "gcm-internal.h",
+        "ghash-internal.h",
+        "gost28147-internal.h",
+        "md-internal.h",
+        "memxor-internal.h",
+        "nettle-internal.h",
+        "nettle-write.h",
+        "non-nettle.h",
+        "oaep.h",
+        "pkcs1-internal.h",
+        "poly1305-internal.h",
+        "ripemd160-internal.h",
+        "salsa20-internal.h",
+        "serpent-internal.h",
+        "sha2-internal.h",
+        "sha3-internal.h",
+        "umac-internal.h",
+        # Generated private headers (DES tables)
+        ":rotors_h",
+        ":keymap_h",
+    ],
+    hdrs = NETTLE_PUBLIC_HDRS + [
+        ":config_h",
+        ":version_h",
+    ],
+    defines = ["HAVE_CONFIG_H"],
+    include_prefix = "nettle",
+    visibility = ["//visibility:public"],
+)
+
+# ---------------------------------------------------------------------------
+# libhogweed — public-key cryptography library
+# ---------------------------------------------------------------------------
+cc_library(
+    name = "hogweed",
+    srcs = [
+        # S-expressions
+        "sexp.c",
+        "sexp-format.c",
+        "sexp-transport.c",
+        "sexp-transport-format.c",
+        # Bignum
+        "bignum.c",
+        "bignum-random.c",
+        "bignum-random-prime.c",
+        "sexp2bignum.c",
+        # PKCS1 / OAEP / PSS
+        "pkcs1.c",
+        "pkcs1-encrypt.c",
+        "pkcs1-decrypt.c",
+        "oaep.c",
+        "pkcs1-sec-decrypt.c",
+        "pkcs1-rsa-digest.c",
+        "pkcs1-rsa-md5.c",
+        "pkcs1-rsa-sha1.c",
+        "pkcs1-rsa-sha256.c",
+        "pkcs1-rsa-sha512.c",
+        "pss.c",
+        "pss-mgf1.c",
+        # RSA
+        "rsa.c",
+        "rsa-sign.c",
+        "rsa-sign-tr.c",
+        "rsa-verify.c",
+        "rsa-sec-compute-root.c",
+        "rsa-pkcs1-sign.c",
+        "rsa-pkcs1-sign-tr.c",
+        "rsa-pkcs1-verify.c",
+        "rsa-md5-sign.c",
+        "rsa-md5-sign-tr.c",
+        "rsa-md5-verify.c",
+        "rsa-sha1-sign.c",
+        "rsa-sha1-sign-tr.c",
+        "rsa-sha1-verify.c",
+        "rsa-sha256-sign.c",
+        "rsa-sha256-sign-tr.c",
+        "rsa-sha256-verify.c",
+        "rsa-sha512-sign.c",
+        "rsa-sha512-sign-tr.c",
+        "rsa-sha512-verify.c",
+        "rsa-pss-sha256-sign-tr.c",
+        "rsa-pss-sha256-verify.c",
+        "rsa-pss-sha512-sign-tr.c",
+        "rsa-pss-sha512-verify.c",
+        "rsa-encrypt.c",
+        "rsa-decrypt.c",
+        "rsa-oaep-encrypt.c",
+        "rsa-oaep-decrypt.c",
+        "rsa-sec-decrypt.c",
+        "rsa-decrypt-tr.c",
+        "rsa-keygen.c",
+        "rsa-blind.c",
+        "rsa2sexp.c",
+        "sexp2rsa.c",
+        # DSA
+        "dsa.c",
+        "dsa-compat.c",
+        "dsa-compat-keygen.c",
+        "dsa-gen-params.c",
+        "dsa-sign.c",
+        "dsa-verify.c",
+        "dsa-keygen.c",
+        "dsa-hash.c",
+        "dsa-sha1-sign.c",
+        "dsa-sha1-verify.c",
+        "dsa-sha256-sign.c",
+        "dsa-sha256-verify.c",
+        "dsa2sexp.c",
+        "sexp2dsa.c",
+        # PGP / DER
+        "pgp-encode.c",
+        "rsa2openpgp.c",
+        "der-iterator.c",
+        "der2rsa.c",
+        "der2dsa.c",
+        # Misc
+        "sec-add-1.c",
+        "sec-sub-1.c",
+        "gmp-glue.c",
+        "cnd-copy.c",
+        # ECC internals
+        "ecc-mod.c",
+        "ecc-mod-inv.c",
+        "ecc-mod-arith.c",
+        "ecc-pp1-redc.c",
+        "ecc-pm1-redc.c",
+        # ECC curves (each includes its generated header)
+        "ecc-curve25519.c",
+        "ecc-curve448.c",
+        "ecc-gost-gc256b.c",
+        "ecc-gost-gc512a.c",
+        "ecc-secp192r1.c",
+        "ecc-secp224r1.c",
+        "ecc-secp256r1.c",
+        "ecc-secp384r1.c",
+        "ecc-secp521r1.c",
+        # ECC operations
+        "ecc-size.c",
+        "ecc-j-to-a.c",
+        "ecc-a-to-j.c",
+        "ecc-dup-jj.c",
+        "ecc-add-jja.c",
+        "ecc-add-jjj.c",
+        "ecc-nonsec-add-jjj.c",
+        "ecc-eh-to-a.c",
+        "ecc-dup-eh.c",
+        "ecc-add-eh.c",
+        "ecc-add-ehh.c",
+        "ecc-dup-th.c",
+        "ecc-add-th.c",
+        "ecc-add-thh.c",
+        "ecc-mul-g-eh.c",
+        "ecc-mul-a-eh.c",
+        "ecc-mul-m.c",
+        "ecc-mul-g.c",
+        "ecc-mul-a.c",
+        "ecc-random.c",
+        "ecc-point.c",
+        "ecc-scalar.c",
+        "ecc-point-mul.c",
+        "ecc-point-mul-g.c",
+        # ECDSA
+        "ecc-ecdsa-sign.c",
+        "ecdsa-sign.c",
+        "ecc-ecdsa-verify.c",
+        "ecdsa-verify.c",
+        "ecdsa-keygen.c",
+        # GOST DSA
+        "ecc-gostdsa-sign.c",
+        "gostdsa-sign.c",
+        "ecc-gostdsa-verify.c",
+        "gostdsa-verify.c",
+        "gostdsa-vko.c",
+        # Curve25519 / Curve448
+        "curve25519-mul-g.c",
+        "curve25519-mul.c",
+        "curve25519-eh-to-x.c",
+        "curve448-mul-g.c",
+        "curve448-mul.c",
+        "curve448-eh-to-x.c",
+        # EdDSA
+        "eddsa-compress.c",
+        "eddsa-decompress.c",
+        "eddsa-expand.c",
+        "eddsa-hash.c",
+        "eddsa-pubkey.c",
+        "eddsa-sign.c",
+        "eddsa-verify.c",
+        "ed25519-sha512.c",
+        "ed25519-sha512-pubkey.c",
+        "ed25519-sha512-sign.c",
+        "ed25519-sha512-verify.c",
+        "ed448-shake256.c",
+        "ed448-shake256-pubkey.c",
+        "ed448-shake256-sign.c",
+        "ed448-shake256-verify.c",
+        # Private (internal) hogweed headers
+        "hogweed-internal.h",
+        "ecc-internal.h",
+        "rsa-internal.h",
+        "pkcs1-internal.h",
+        "dsa-internal.h",
+        "eddsa-internal.h",
+        "gmp-glue.h",
+        # Generated ECC curve data headers
+        ":ecc_secp192r1_h",
+        ":ecc_secp224r1_h",
+        ":ecc_secp256r1_h",
+        ":ecc_secp384r1_h",
+        ":ecc_secp521r1_h",
+        ":ecc_curve25519_h",
+        ":ecc_curve448_h",
+        ":ecc_gost_gc256b_h",
+        ":ecc_gost_gc512a_h",
+    ],
+    hdrs = HOGWEED_PUBLIC_HDRS,
+    defines = ["HAVE_CONFIG_H"],
+    include_prefix = "nettle",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":nettle",
+        "@gmp//:gmp",
+    ],
+)
