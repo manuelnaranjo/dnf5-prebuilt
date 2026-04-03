@@ -36,6 +36,7 @@ with this program; if not, see <https://www.gnu.org/licenses/>.
 #include <fnmatch.h>
 
 #include <algorithm>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -292,6 +293,83 @@ static void resolve_arch(
 }
 
 
+// ── Topological sort ──────────────────────────────────────────────────────────
+// Sort a package closure in dependency installation order using Kahn's BFS
+// algorithm. Packages with no in-closure dependencies come first. Alphabetical
+// order is used to break ties for determinism. RPM dependency graphs can have
+// cycles; when the queue empties with packages remaining, the cycle is broken
+// by force-enqueueing the unprocessed package with the lowest in-degree
+// (alphabetically first on ties).
+static std::vector<std::string> topo_sort(
+    const std::vector<std::string> & closure,
+    const std::map<std::string, PkgInfo> & packages)
+{
+    std::unordered_set<std::string> in_closure(closure.begin(), closure.end());
+
+    // in-degree within the closure; std::map keeps keys sorted for determinism
+    std::map<std::string, int> indegree;
+    std::map<std::string, std::vector<std::string>> rdeps;
+    for (const auto & nevra : closure)
+        indegree[nevra] = 0;
+    for (const auto & nevra : closure) {
+        auto it = packages.find(nevra);
+        if (it == packages.end()) continue;
+        for (const auto & dep : it->second.deps) {
+            if (!in_closure.count(dep)) continue;
+            indegree[nevra]++;
+            rdeps[dep].push_back(nevra);
+        }
+    }
+
+    // Seed with zero-in-degree packages (already sorted via std::map iteration)
+    std::vector<std::string> queue;
+    for (const auto & [nevra, deg] : indegree)
+        if (deg == 0)
+            queue.push_back(nevra);
+
+    std::vector<std::string> result;
+    result.reserve(closure.size());
+    int head = 0;
+
+    auto drain = [&]() {
+        while (head < (int)queue.size()) {
+            const std::string nv = queue[head++];
+            indegree[nv] = -1;  // mark processed
+            result.push_back(nv);
+            std::vector<std::string> newly_zero;
+            for (const auto & rdep : rdeps[nv]) {
+                if (indegree[rdep] <= 0) continue;
+                if (--indegree[rdep] == 0)
+                    newly_zero.push_back(rdep);
+            }
+            std::sort(newly_zero.begin(), newly_zero.end());
+            for (const auto & nz : newly_zero)
+                queue.push_back(nz);
+        }
+    };
+
+    drain();
+
+    // Break any cycles by force-picking the minimum-in-degree package
+    // (alphabetically first on ties) until all packages are placed.
+    while (result.size() != closure.size()) {
+        std::string best;
+        int best_deg = INT_MAX;
+        for (const auto & [nevra, deg] : indegree) {
+            if (deg <= 0) continue;
+            if (deg < best_deg || (deg == best_deg && nevra < best)) {
+                best = nevra;
+                best_deg = deg;
+            }
+        }
+        indegree[best] = 0;
+        queue.push_back(best);
+        drain();
+    }
+
+    return result;
+}
+
 // ── JSON serialisation ─────────────────────────────────────────────────────────
 // Keys are inserted in alphabetical order into every json_object so that
 // json-c's insertion-order serialisation produces deterministic output.
@@ -358,8 +436,8 @@ static json_object * build_json(const LockData & lock)
                 json_object_object_add(tobj, arch.c_str(), err_obj);
             } else {
                 const auto & closure = lock.closures.at(target).at(arch);
-                std::vector<std::string> sorted_closure(closure);
-                std::sort(sorted_closure.begin(), sorted_closure.end());
+                std::vector<std::string> sorted_closure =
+                    topo_sort(closure, lock.packages);
                 json_object * carr = json_object_new_array();
                 for (const auto & nevra : sorted_closure)
                     json_object_array_add(carr, json_object_new_string(nevra.c_str()));
