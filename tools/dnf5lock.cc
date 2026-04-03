@@ -57,6 +57,7 @@ enum {
     OPT_EXCLUDE   = 5,
     OPT_STRIP     = 6,
     OPT_GPGKEYDIR = 7,
+    OPT_VAR       = 8,
 };
 
 static const char * opt_output   = nullptr;
@@ -81,6 +82,8 @@ static struct poptOption options_table[] = {
       "verify GPG signatures of all resolved packages", nullptr },
     { "gpgkeydir", '\0', POPT_ARG_STRING, nullptr, OPT_GPGKEYDIR,
       "directory containing trusted GPG key files", "DIR" },
+    { "var", '\0', POPT_ARG_STRING, nullptr, OPT_VAR,
+      "set DNF variable NAME=VALUE at runtime priority (repeatable)", "NAME=VALUE" },
     POPT_AUTOHELP
     POPT_TABLEEND
 };
@@ -191,6 +194,7 @@ static void resolve_arch(
     const std::vector<std::string> & repodirs,
     const std::string & config_file,
     const std::vector<std::string> & exclude_patterns,
+    const std::vector<std::pair<std::string, std::string>> & extra_vars,
     bool gpg_check,
     LockData & lock)
 {
@@ -202,6 +206,8 @@ static void resolve_arch(
 
     base.load_config();
     base.get_vars()->set("arch", arch, libdnf5::Vars::Priority::RUNTIME);
+    for (const auto & [k, v] : extra_vars)
+        base.get_vars()->set(k, v, libdnf5::Vars::Priority::RUNTIME);
     base.setup();
 
     auto sack = base.get_repo_sack();  // RepoSackWeakPtr
@@ -380,6 +386,7 @@ int main(int argc, char * argv[])
     std::vector<std::string> allowed_repos;
     std::vector<std::string> exclude_patterns;
     std::vector<std::string> strip_patterns;
+    std::vector<std::pair<std::string, std::string>> extra_vars;
 
     poptContext opt_ctx =
         poptGetContext(nullptr, argc,
@@ -399,6 +406,19 @@ int main(int argc, char * argv[])
         case OPT_EXCLUDE:   if (val) exclude_patterns.emplace_back(val); break;
         case OPT_STRIP:     if (val) strip_patterns.emplace_back(val);   break;
         case OPT_GPGKEYDIR: /* gpgkeydir is informational for now */     break;
+        case OPT_VAR:
+            if (val) {
+                std::string kv(val);
+                auto eq = kv.find('=');
+                if (eq == std::string::npos) {
+                    fprintf(stderr, "dnf5lock: --var requires NAME=VALUE, got: %s\n", val);
+                    free(const_cast<char *>(val));
+                    poptFreeContext(opt_ctx);
+                    return EXIT_FAILURE;
+                }
+                extra_vars.emplace_back(kv.substr(0, eq), kv.substr(eq + 1));
+            }
+            break;
         }
         free(const_cast<char *>(val));
     }
@@ -441,7 +461,7 @@ int main(int argc, char * argv[])
 
     for (const auto & arch : arches)
         resolve_arch(arch, targets, repodirs, config_file,
-                     exclude_patterns, opt_gpgcheck != 0, lock);
+                     exclude_patterns, extra_vars, opt_gpgcheck != 0, lock);
 
     compute_deps(lock);
 
