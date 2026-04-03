@@ -51,3 +51,5 @@ rust.toolchain(
 )
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
+
+bazel_dep(name = "rules_shell", version = "0.7.1", dev_dependency = True)

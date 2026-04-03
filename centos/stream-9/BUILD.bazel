@@ -1,0 +1,10 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_test(
+    name = "lock-base-image",
+    srcs = ["test.sh"],
+    data = [
+        "//tools:dnf5lock",
+    ] + glob(["etc/**/*"]),
+    deps = ["@rules_shell//shell/runfiles"],
+)
