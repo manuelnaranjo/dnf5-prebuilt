@@ -1,0 +1,30 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "dnf5lock",
+    srcs = ["dnf5lock.cc"],
+    copts = ["-std=gnu++23"],
+    local_defines = ["_GNU_SOURCE"],
+    deps = [
+        "@dnf5//libdnf5",
+        "@dnf5//libdnf5:bgettext",
+        "@json-c",
+        "@popt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "rpms2archive",
+    srcs = ["rpms2archive.cc"],
+    copts = ["-std=gnu++23", "-fpermissive"],
+    local_defines = ["_GNU_SOURCE", "HAVE_CONFIG_H", "_FILE_OFFSET_BITS=64"],
+    deps = [
+        "@rpm//:librpm",
+        "@rpm//:librpmio",
+        "@popt",
+        "@libarchive//libarchive",
+    ],
+    visibility = ["//visibility:public"],
+)
+

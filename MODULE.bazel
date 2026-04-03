@@ -3,6 +3,8 @@ module(
     version = "0.0.1",
 )
 
+bazel_dep(name = "rules_cc", version = "0.2.17")
+
 # resolver and frontend
 bazel_dep(name = "dnf5", version = "5.4.0.bcr.1")
 
@@ -11,6 +13,11 @@ bazel_dep(name = "rpm", version = "6.0.1.bcr.2")
 
 # needed to set which ssl lib to use
 bazel_dep(name = "curl", version = "8.12.0")
+
+# needed for tools
+bazel_dep(name = "libarchive", version = "3.8.1.bcr.2")
+bazel_dep(name = "popt", version = "1.19")
+bazel_dep(name = "json-c", version = "0.18.bcr.1")
 
 # RBE toolchain
 bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
