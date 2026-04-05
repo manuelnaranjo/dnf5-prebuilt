@@ -12,4 +12,6 @@ common:remote --jobs 40
 
 common:debug --compilation_mode dbg
 
+test --test_output=errors
+
 try-import %workspace%/.bazelrc.user
