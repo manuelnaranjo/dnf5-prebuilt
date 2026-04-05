@@ -2,6 +2,8 @@
 
 set -exou pipefail
 
+export RPM_CONFIGDIR=$(pwd)/centos/stream-9/usr/lib/rpm
+
 pwd > /dev/stderr
 
 ./tools/dnf5lock \
