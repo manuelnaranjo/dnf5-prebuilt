@@ -5,6 +5,12 @@ sh_test(
     srcs = ["test.sh"],
     data = [
         "//tools:dnf5lock",
-    ] + glob(["etc/**/*"]),
+    ] + glob(["etc/**/*", "usr/**/*"]),
     deps = ["@rules_shell//shell/runfiles"],
+    tags = [
+        "requires-network"
+    ],
+    exec_properties = {
+        "dockerNetwork":"bridge",  # make sure buildbuddy rbe allows internet access
+    },
 )
