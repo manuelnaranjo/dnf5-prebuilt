@@ -30,7 +30,7 @@ register_toolchains(
 )
 
 # hermetic c/c++ toolchain
-bazel_dep(name = "llvm", version = "0.6.9")
+bazel_dep(name = "llvm", version = "0.7.0")
 
 register_toolchains("@llvm//toolchain:all")
 
