@@ -18,7 +18,7 @@ jobs:
       - name: Configure BuildBuddy
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-          BUILDBUDDY_ENDPOINT: ${{ secrets.BUILDBUDDY_ENDPOINT }}
+          BUILDBUDDY_ENDPOINT: ${{ vars.BUILDBUDDY_ENDPOINT }}
         run: |
           cat > .bazelrc.user <<EOF
           build:remote --bes_results_url=https://${BUILDBUDDY_ENDPOINT}/invocation/
@@ -54,7 +54,7 @@ jobs:
       - name: Configure BuildBuddy
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-          BUILDBUDDY_ENDPOINT: ${{ secrets.BUILDBUDDY_ENDPOINT }}
+          BUILDBUDDY_ENDPOINT: ${{ vars.BUILDBUDDY_ENDPOINT }}
         run: |
           cat > .bazelrc.user <<EOF
           build:remote --bes_results_url=https://${BUILDBUDDY_ENDPOINT}/invocation/
