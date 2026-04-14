@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Runs automatically on pushes to main (trusted code)
+  build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure BuildBuddy
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          BUILDBUDDY_ENDPOINT: ${{ secrets.BUILDBUDDY_ENDPOINT }}
+        run: |
+          cat > .bazelrc.user <<EOF
+          build:remote --bes_results_url=https://${BUILDBUDDY_ENDPOINT}/invocation/
+          build:remote --bes_backend=grpcs://${BUILDBUDDY_ENDPOINT}
+          common:remote --remote_cache=grpcs://${BUILDBUDDY_ENDPOINT}
+          common:remote --noremote_upload_local_results
+          common:remote --remote_timeout=10m
+          common:remote --remote_executor=grpcs://${BUILDBUDDY_ENDPOINT}
+          common:remote --remote_header=x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}
+          common:remote --jobs=40
+          EOF
+
+      - name: Build
+        run: bazel build //... --config=remote
+      - name: Test
+        run: bazel test //... --config=remote
+
+  # Runs on PRs from forks — gated behind manual approval via the fork-ci environment.
+  # A maintainer must review the PR and approve the environment deployment before
+  # this job starts. Only then does it check out the fork's code and run CI with
+  # the BuildBuddy token.
+  build-fork-pr:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    environment: fork-ci  # requires manual approval — configure in Settings → Environments
+    steps:
+      # Explicitly check out the PR head commit, not the base branch.
+      # This is safe because a maintainer has already approved this run.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Configure BuildBuddy
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          BUILDBUDDY_ENDPOINT: ${{ secrets.BUILDBUDDY_ENDPOINT }}
+        run: |
+          cat > .bazelrc.user <<EOF
+          build:remote --bes_results_url=https://${BUILDBUDDY_ENDPOINT}/invocation/
+          build:remote --bes_backend=grpcs://${BUILDBUDDY_ENDPOINT}
+          common:remote --remote_cache=grpcs://${BUILDBUDDY_ENDPOINT}
+          common:remote --noremote_upload_local_results
+          common:remote --remote_timeout=10m
+          common:remote --remote_executor=grpcs://${BUILDBUDDY_ENDPOINT}
+          common:remote --remote_header=x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}
+          common:remote --jobs=40
+          EOF
+
+      - name: Build
+        run: bazel build //... --config=remote
+      - name: Test
+        run: bazel test //... --config=remote
